@@ -312,7 +312,12 @@ where
         use perf_event_open_sys::bindings::*;
         use std::mem;
 
-        let data_len = header.size as usize - mem::size_of_val(&header);
+        let data_len = (header.size as usize)
+            .checked_sub(mem::size_of_val(&header))
+            .ok_or_else(|| {
+                ParseError::custom("header size was too small to be valid")
+                    .with_code(ErrorKind::InvalidRecord)
+            })?;
         let mut rp = self.split_at(data_len)?;
         // MMAP and SAMPLE records do not have the sample_id struct.
         // All other records do.

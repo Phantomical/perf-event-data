@@ -13,14 +13,17 @@ perf-event-data = { path = ".." }
 perf-event-open-sys2 = "5.0"
 
 # Prevent this from interfering with workspaces
-[workspace]
-members = ["."]
-
-[profile.release]
-debug = true
+# [workspace]
+# members = ["."]
 
 [[bin]]
 name = "fuzz_record"
 path = "fuzz_targets/fuzz_record.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_record_basic"
+path = "fuzz_targets/fuzz_record_basic.rs"
 test = false
 doc = false

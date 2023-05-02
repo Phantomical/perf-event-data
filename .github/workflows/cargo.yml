@@ -60,7 +60,7 @@ jobs:
     needs:
       - test
       - rustfmt
-      - clippy-upload
+      - clippy
     steps:
       - shell: bash
         run: echo "All checks passed!"

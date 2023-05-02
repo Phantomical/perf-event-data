@@ -260,8 +260,10 @@ where
         }
 
         let byte_len = len.checked_mul(std::mem::size_of::<T>()).ok_or_else(|| {
-            ParseError::custom("array length in bytes larger than usize::MAX")
-                .with_code(ErrorKind::InvalidRecord)
+            ParseError::custom(
+                ErrorKind::InvalidRecord,
+                format_args!("array length in bytes larger than usize::MAX"),
+            )
         })?;
         let bytes = match self.parse_bytes_direct(byte_len)? {
             Some(bytes) => bytes,
@@ -319,8 +321,10 @@ where
         let data_len = (header.size as usize)
             .checked_sub(mem::size_of_val(&header))
             .ok_or_else(|| {
-                ParseError::custom("header size was too small to be valid")
-                    .with_code(ErrorKind::InvalidRecord)
+                ParseError::custom(
+                    ErrorKind::InvalidRecord,
+                    format_args!("header size was too small to be valid"),
+                )
             })?;
         let mut rp = self.split_at(data_len)?;
         // MMAP and SAMPLE records do not have the sample_id struct.
@@ -328,7 +332,14 @@ where
         let (p, sample_id) = match header.type_ {
             PERF_RECORD_MMAP | PERF_RECORD_SAMPLE => (rp, SampleId::default()),
             _ => {
-                let p = rp.split_at(data_len - SampleId::estimate_len(rp.config()))?;
+                let remaining_len = data_len
+                    .checked_sub(SampleId::estimate_len(rp.config()))
+                    .ok_or_else(|| ParseError::custom(
+                        ErrorKind::InvalidRecord,
+                        format_args!("config has sample_id_all bit set but record does not have enough data to store the sample_id")
+                    ))?;
+
+                let p = rp.split_at(remaining_len)?;
                 (p, rp.parse()?)
             }
         };

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error::Error;
 use std::fmt::{self, Display};
 
@@ -37,8 +38,8 @@ impl ParseError {
     }
 
     /// Create a new `ParseError` with a custom message.
-    pub fn custom(msg: impl Display) -> Self {
-        Self::new(CustomMessageError(msg.to_string()))
+    pub(crate) fn custom(kind: ErrorKind, msg: fmt::Arguments) -> Self {
+        Self::new(CustomMessageError::new(msg)).with_code(kind)
     }
 
     /// Get the [`ErrorKind`] of this error.
@@ -138,7 +139,16 @@ impl From<BoxedError> for ParseError {
 }
 
 #[derive(Debug)]
-struct CustomMessageError(String);
+struct CustomMessageError(Cow<'static, str>);
+
+impl CustomMessageError {
+    fn new(msg: fmt::Arguments) -> Self {
+        Self(match msg.as_str() {
+            Some(s) => Cow::Borrowed(s),
+            None => msg.to_string().into(),
+        })
+    }
+}
 
 impl fmt::Display for CustomMessageError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

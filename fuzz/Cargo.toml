@@ -9,8 +9,8 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-perf-event-data = { path = ".." }
-perf-event-open-sys2 = "5.0"
+arbitrary = "1"
+perf-event-data = { path = "..", features = ["fuzzing"] }
 
 # Prevent this from interfering with workspaces
 # [workspace]

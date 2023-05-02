@@ -36,3 +36,17 @@ jobs:
     needs: precheck
     uses: ./.github/workflows/cargo.yml
     secrets: inherit
+
+  clippy-upload:
+    runs-on: ubuntu-latest
+    needs: [ cargo ]
+    permissions:
+      security-events: write
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        name: clippy-sarif
+    - uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: clippy.sarif

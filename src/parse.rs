@@ -259,7 +259,11 @@ where
             return Ok(None);
         }
 
-        let bytes = match self.parse_bytes_direct(len * std::mem::size_of::<T>())? {
+        let byte_len = len.checked_mul(std::mem::size_of::<T>()).ok_or_else(|| {
+            ParseError::custom("array length in bytes larger than usize::MAX")
+                .with_code(ErrorKind::InvalidRecord)
+        })?;
+        let bytes = match self.parse_bytes_direct(byte_len)? {
             Some(bytes) => bytes,
             None => return Ok(None),
         };

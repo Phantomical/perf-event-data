@@ -15,18 +15,23 @@ impl Visitor for ParseVisitor {
     }
 }
 
-#[test]
-fn zero_header_size() {
-    let data: &[u8] = &[0, 0, 0, 0, 0, 0, 0, 0];
+fn fuzz_test(data: &[u8]) {
     let config = ParseConfig::<Little>::default();
     let mut parser = Parser::new(data, config);
     let _ = parser.parse_record(ParseVisitor);
 }
 
 #[test]
+fn zero_header_size() {
+    fuzz_test(&[0, 0, 0, 0, 0, 0, 0, 0]);
+}
+
+#[test]
 fn overlarge_header_size() {
-    let data: &[u8] = &[9, 0, 0, 0, 0, 251, 85, 182, 246];
-    let config = ParseConfig::<Little>::default();
-    let mut parser = Parser::new(data, config);
-    let _ = parser.parse_record(ParseVisitor);
+    fuzz_test(&[9, 0, 0, 0, 0, 251, 85, 182, 246]);
+}
+
+#[test]
+fn enormous_slice() {
+    fuzz_test(&[16, 0, 0, 0, 0, 180, 8, 69, 86, 81, 0, 180, 180, 8]);
 }

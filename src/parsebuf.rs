@@ -41,7 +41,7 @@ impl<'tmp, 'ext: 'tmp> ParseBufChunk<'tmp, 'ext> {
     }
 
     pub(crate) fn truncate(&mut self, len: usize) {
-        if self.len() >= len {
+        if self.len() <= len {
             return;
         }
 

@@ -2,7 +2,16 @@
 name = "perf-event-data"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT OR Apache-2.0"
+authors = ["Sean Lynch <sean@lynches.ca>"]
+repository = "https://github.com/Phantomical/perf-event-data.git"
+description = "Types and traits for parsing records emitted by perf_event_open"
+readme = "README.md"
+keywords = ["linux", "perf"]
+categories = [
+  "development-tools::profiling",
+  "hardware-support",
+  "os::linux-apis"
+]
 
 [dependencies]

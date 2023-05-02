@@ -1,3 +1,5 @@
+use std::alloc::GlobalAlloc;
+
 use perf_event_data::endian::Little;
 use perf_event_data::parse::{ParseConfig, Parser};
 use perf_event_data::Visitor;
@@ -14,6 +16,27 @@ impl Visitor for ParseVisitor {
         ()
     }
 }
+
+/// Allocator that panics if we allocate something too large.
+struct LimitAlloc(std::alloc::System);
+
+impl LimitAlloc {
+    const MAX_SIZE: usize = 4 * 1024 * 1024;
+}
+
+unsafe impl GlobalAlloc for LimitAlloc {
+    unsafe fn alloc(&self, layout: std::alloc::Layout) -> *mut u8 {
+        assert!(layout.size() < Self::MAX_SIZE);
+        self.0.alloc(layout)
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: std::alloc::Layout) {
+        self.0.dealloc(ptr, layout);
+    }
+}
+
+#[global_allocator]
+static LIMIT_ALLOC: LimitAlloc = LimitAlloc(std::alloc::System);
 
 fn fuzz_test(data: &[u8]) {
     let config = ParseConfig::<Little>::default();
@@ -63,5 +86,20 @@ fn buffer_smaller_than_sample_id_len() {
         115, 115, 115, 115, 19, 0, 0, 0, 0, 0, 0, 0, 115, 115, 115, 115, 135, 135, 135, 135, 135,
         135, 135, 135, 115, 115, 115, 115, 135, 131, 120, 135, 255, 0, 0, 115, 115, 115, 115, 115,
         115, 115, 115, 115, 115,
+    ]);
+}
+
+#[test]
+#[cfg_attr(not(feature = "fuzzing"), ignore = "requires the 'fuzzing' feature")]
+fn oversize_alloc() {
+    fuzz_with_config(&[
+        214, 115, 91, 93, 115, 141, 140, 140, 148, 115, 115, 115, 115, 115, 115, 115, 145, 115,
+        115, 255, 255, 255, 255, 255, 255, 255, 255, 1, 0, 0, 0, 255, 255, 255, 9, 0, 0, 0, 115,
+        115, 115, 115, 115, 115, 115, 107, 114, 115, 115, 115, 255, 135, 135, 1, 0, 0, 0, 135, 135,
+        135, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 115, 115, 93, 115, 0, 0,
+        115, 115, 115, 115, 115, 114, 115, 40, 115, 115, 115, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
+        0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 1, 0, 0, 0, 255, 255, 255,
+        9, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 115, 255, 255, 255, 255, 255, 255, 255,
+        255, 255, 115, 255, 255, 38, 255, 255, 255, 1,
     ]);
 }

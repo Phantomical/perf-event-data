@@ -105,16 +105,21 @@ where
     }
 
     /// Directly get a reference to the next `len` bytes in the input buffer.
-    pub fn parse_bytes(&mut self, len: usize) -> Result<Cow<'p, [u8]>> {
+    pub fn parse_bytes(&mut self, mut len: usize) -> Result<Cow<'p, [u8]>> {
         if let Some(bytes) = self.parse_bytes_direct(len)? {
             return Ok(Cow::Borrowed(bytes));
         }
 
-        let mut bytes = Vec::with_capacity(len);
-        self.parse_to_slice(bytes.spare_capacity_mut())?;
-        // SAFETY: parse_to_slice completed successfully so all of the vec's spare
-        //         capacity is initialized.
-        unsafe { bytes.set_len(len) };
+        let mut bytes = Vec::with_capacity(self.safe_capacity_bound::<u8>().min(len));
+        while len > 0 {
+            let mut chunk = self.data.chunk()?;
+            chunk.truncate(len);
+            bytes.extend_from_slice(&chunk);
+            
+            let chunk_len = chunk.len();
+            len -= chunk_len;
+            self.data.advance(chunk_len);
+        }
 
         Ok(Cow::Owned(bytes))
     }

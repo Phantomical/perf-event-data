@@ -38,7 +38,7 @@ impl ParseError {
     }
 
     /// Create a new `ParseError` with a custom message.
-    pub(crate) fn custom(kind: ErrorKind, msg: fmt::Arguments) -> Self {
+    pub(crate) fn custom(kind: ErrorKind, msg: impl Message) -> Self {
         Self::new(CustomMessageError::new(msg)).with_code(kind)
     }
 
@@ -138,11 +138,27 @@ impl From<BoxedError> for ParseError {
     }
 }
 
+pub(crate) trait Message: Display {
+    fn as_str(&self) -> Option<&'static str>;
+}
+
+impl Message for &'static str {
+    fn as_str(&self) -> Option<&'static str> {
+        Some(self)
+    }
+}
+
+impl Message for fmt::Arguments<'_> {
+    fn as_str(&self) -> Option<&'static str> {
+        self.as_str()
+    }
+}
+
 #[derive(Debug)]
 struct CustomMessageError(Cow<'static, str>);
 
 impl CustomMessageError {
-    fn new(msg: fmt::Arguments) -> Self {
+    fn new(msg: impl Message) -> Self {
         Self(match msg.as_str() {
             Some(s) => Cow::Borrowed(s),
             None => msg.to_string().into(),

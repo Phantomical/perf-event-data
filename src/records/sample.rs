@@ -203,7 +203,7 @@ impl<'p> Parse<'p> for Sample<'p> {
             if dyn_size > data.len() {
                 return Err(ParseError::custom(
                     ErrorKind::InvalidRecord,
-                    format_args!("stack dyn_size was greater than the record size"),
+                    "stack dyn_size was greater than the record size",
                 ));
             }
 

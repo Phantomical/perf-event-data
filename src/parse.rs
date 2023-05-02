@@ -262,7 +262,7 @@ where
         let byte_len = len.checked_mul(std::mem::size_of::<T>()).ok_or_else(|| {
             ParseError::custom(
                 ErrorKind::InvalidRecord,
-                format_args!("array length in bytes larger than usize::MAX"),
+                "array length in bytes larger than usize::MAX",
             )
         })?;
         let bytes = match self.parse_bytes_direct(byte_len)? {
@@ -323,7 +323,7 @@ where
             .ok_or_else(|| {
                 ParseError::custom(
                     ErrorKind::InvalidRecord,
-                    format_args!("header size was too small to be valid"),
+                    "header size was too small to be valid",
                 )
             })?;
         let mut rp = self.split_at(data_len)?;
@@ -336,7 +336,7 @@ where
                     .checked_sub(SampleId::estimate_len(rp.config()))
                     .ok_or_else(|| ParseError::custom(
                         ErrorKind::InvalidRecord,
-                        format_args!("config has sample_id_all bit set but record does not have enough data to store the sample_id")
+                        "config has sample_id_all bit set but record does not have enough data to store the sample_id"
                     ))?;
 
                 let p = rp.split_at(remaining_len)?;

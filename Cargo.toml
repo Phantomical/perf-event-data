@@ -15,3 +15,5 @@ categories = [
 ]
 
 [dependencies]
+bitflags = "2.0"
+perf-event-open-sys2 = "5.0"

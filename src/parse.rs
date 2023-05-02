@@ -206,10 +206,16 @@ where
     /// Consume the rest of the buffer and return it as a slice.
     pub fn parse_rest(&mut self) -> Result<Cow<'p, [u8]>> {
         let mut bytes = self.data.chunk()?.to_cow();
+        self.data.advance(bytes.len());
 
         loop {
             match self.data.chunk() {
-                Ok(chunk) => bytes.to_mut().extend_from_slice(&chunk),
+                Ok(chunk) => {
+                    bytes.to_mut().extend_from_slice(&chunk);
+
+                    let len = chunk.len();
+                    self.data.advance(len);
+                }
                 Err(e) if e.kind() == ErrorKind::Eof => break,
                 Err(e) => return Err(e),
             }
@@ -427,5 +433,20 @@ impl<'p> Parse<'p> for bindings::perf_event_header {
             misc: p.parse()?,
             size: p.parse()?,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::endian::Native;
+
+    #[test]
+    fn parse_rest() {
+        let data: &[u8] = &[1, 2, 3, 4, 5];
+        let mut parser = Parser::new(data, ParseConfig::<Native>::default());
+        let rest = parser.parse_rest().unwrap();
+
+        assert_eq!(data, &*rest);
     }
 }

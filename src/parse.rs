@@ -62,11 +62,6 @@ where
         self.config.endian()
     }
 
-    #[deprecated]
-    pub fn len(&self) -> usize {
-        panic!("len is unimplemented")
-    }
-
     /// Advance the current parser by `offset` and return a new parser for the
     /// data within.
     fn split_at(&mut self, offset: usize) -> Result<Parser<ParseBufCursor<'p>, E>> {

@@ -1,3 +1,4 @@
+use crate::error::ParseError;
 use crate::prelude::*;
 use std::borrow::Cow;
 use std::fmt;
@@ -360,7 +361,15 @@ impl<'p> Parse<'p> for GroupRead<'p> {
             .unwrap_or(0);
 
         let element_len = read_format.element_len();
-        let data = unsafe { p.parse_slice(nr * element_len)? };
+        let data_len = nr //
+            .checked_mul(element_len)
+            .ok_or_else(|| {
+                ParseError::custom(
+                    ErrorKind::InvalidRecord,
+                    "number of elements in group read was too large for data type",
+                )
+            })?;
+        let data = unsafe { p.parse_slice(data_len)? };
 
         Ok(Self {
             read_format,

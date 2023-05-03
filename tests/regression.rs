@@ -113,3 +113,13 @@ fn bad_group() {
         115,
     ]);
 }
+
+#[test]
+#[cfg_attr(not(feature = "fuzzing"), ignore = "requires the 'fuzzing' feature")]
+fn oversize_read_group() {
+    fuzz_with_config(&[
+        214, 115, 91, 93, 115, 255, 255, 255, 255, 115, 115, 115, 115, 115, 145, 135, 9, 0, 0, 0,
+        135, 255, 115, 135, 0, 0, 0, 115, 16, 115, 123, 255, 135, 135, 9, 0, 0, 0, 0, 0, 115, 16,
+        115,
+    ]);
+}

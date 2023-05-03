@@ -349,7 +349,7 @@ impl<'p> Parse<'p> for GroupRead<'p> {
         B: ParseBuf<'p>,
     {
         let read_format = p.config().read_format();
-        assert!(!read_format.contains(ReadFormat::GROUP));
+        assert!(read_format.contains(ReadFormat::GROUP));
 
         let nr = p.parse_u64()? as usize;
         let time_enabled = p

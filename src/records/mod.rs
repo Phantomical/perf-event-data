@@ -53,7 +53,7 @@ pub type Fork = Exit;
 
 mod sample_id {
     option_struct! {
-        #[derive(Copy)]
+        ##[copy]
         pub(super) struct SampleId : u8 {
             pub pid: u32,
             pub tid: u32,

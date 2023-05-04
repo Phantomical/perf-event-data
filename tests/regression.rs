@@ -13,7 +13,6 @@ impl Visitor for ParseVisitor {
         self,
         _metadata: perf_event_data::RecordMetadata,
     ) -> Self::Output<'a> {
-        ()
     }
 }
 

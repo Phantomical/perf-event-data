@@ -13,7 +13,6 @@ fn fuzz_test(data: &[u8]) {
             self,
             _metadata: perf_event_data::RecordMetadata,
         ) -> Self::Output<'a> {
-            ()
         }
     }
 

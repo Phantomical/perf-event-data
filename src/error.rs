@@ -27,6 +27,7 @@ pub struct ParseError {
 
 impl ParseError {
     /// Create a new `ParseError` from an arbitrary error payload.
+    #[cold]
     pub fn new<E>(error: E) -> Self
     where
         E: Into<BoxedError>,
@@ -38,6 +39,7 @@ impl ParseError {
     }
 
     /// Create a new `ParseError` with a custom message.
+    #[cold]
     pub(crate) fn custom(kind: ErrorKind, msg: impl Message) -> Self {
         Self::new(CustomMessageError::new(msg)).with_kind(kind)
     }
@@ -129,6 +131,7 @@ impl Error for ParseError {
 }
 
 impl From<std::io::Error> for ParseError {
+    #[cold]
     fn from(error: std::io::Error) -> Self {
         match error.kind() {
             std::io::ErrorKind::UnexpectedEof => Self::new(error).with_kind(ErrorKind::Eof),
@@ -138,6 +141,7 @@ impl From<std::io::Error> for ParseError {
 }
 
 impl From<BoxedError> for ParseError {
+    #[cold]
     fn from(error: BoxedError) -> Self {
         Self {
             code: ErrorKind::External,

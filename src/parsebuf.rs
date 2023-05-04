@@ -186,10 +186,12 @@ impl<'p> ParseBuf<'p> for ParseBufCursor<'p> {
             .expect("advanced past the end of the buffer");
         self.offset += count;
 
-        if let Some(chunk) = self.chunks.last() {
+        while let Some(chunk) = self.chunks.last() {
             if self.offset >= chunk.len() {
                 self.offset -= chunk.len();
                 self.chunks.pop();
+            } else {
+                break;
             }
         }
     }

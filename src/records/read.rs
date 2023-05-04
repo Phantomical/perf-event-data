@@ -325,15 +325,15 @@ impl<'p> Parse<'p> for SingleRead {
 
         if read_format.contains(ReadFormat::GROUP) {
             return Err(ParseError::custom(
-                ErrorKind::UnsupportedConfig, 
-                "attempted to parse a SingleRead with a config that has GROUP set in read_format"
+                ErrorKind::UnsupportedConfig,
+                "attempted to parse a SingleRead with a config that has GROUP set in read_format",
             ));
         }
 
         if !(read_format - ReadFormat::all()).is_empty() {
             return Err(ParseError::custom(
                 ErrorKind::UnsupportedConfig,
-                "read_format contains unsupported flags"
+                "read_format contains unsupported flags",
             ));
         }
 
@@ -366,7 +366,7 @@ impl<'p> Parse<'p> for GroupRead<'p> {
 
         if !read_format.contains(ReadFormat::GROUP) {
             return Err(ParseError::custom(
-                ErrorKind::UnsupportedConfig, 
+                ErrorKind::UnsupportedConfig,
                 "attempted to parse a GroupRead with a config that does not have GROUP set in read_format"
             ));
         }
@@ -374,7 +374,7 @@ impl<'p> Parse<'p> for GroupRead<'p> {
         if !(read_format - ReadFormat::all()).is_empty() {
             return Err(ParseError::custom(
                 ErrorKind::UnsupportedConfig,
-                "read_format contains unsupported flags"
+                "read_format contains unsupported flags",
             ));
         }
 

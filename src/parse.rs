@@ -115,7 +115,7 @@ where
             let mut chunk = self.data.chunk()?;
             chunk.truncate(len);
             bytes.extend_from_slice(&chunk);
-            
+
             let chunk_len = chunk.len();
             len -= chunk_len;
             self.data.advance(chunk_len);

@@ -113,7 +113,7 @@ impl<'a, E: Endian + Default> arbitrary::Arbitrary<'a> for ParseConfig<E> {
     fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<Self> {
         Ok(Self {
             endian: E::default(),
-            config: RawParseConfig::arbitrary(u)?
+            config: RawParseConfig::arbitrary(u)?,
         })
     }
-} 
+}

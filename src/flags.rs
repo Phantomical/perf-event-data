@@ -195,7 +195,7 @@ mod fuzzing {
             Ok(Self::from_bits_retain(Arbitrary::arbitrary(u)?))
         }
     }
-    
+
     impl<'a> Arbitrary<'a> for ReadFormat {
         fn arbitrary(u: &mut Unstructured) -> Result<Self> {
             Ok(Self::from_bits_retain(Arbitrary::arbitrary(u)?))

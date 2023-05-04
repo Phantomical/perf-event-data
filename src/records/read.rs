@@ -322,7 +322,20 @@ impl<'p> Parse<'p> for SingleRead {
         B: ParseBuf<'p>,
     {
         let read_format = p.config().read_format();
-        assert!(!read_format.contains(ReadFormat::GROUP));
+
+        if read_format.contains(ReadFormat::GROUP) {
+            return Err(ParseError::custom(
+                ErrorKind::UnsupportedConfig, 
+                "attempted to parse a SingleRead with a config that has GROUP set in read_format"
+            ));
+        }
+
+        if !(read_format - ReadFormat::all()).is_empty() {
+            return Err(ParseError::custom(
+                ErrorKind::UnsupportedConfig,
+                "read_format contains unsupported flags"
+            ));
+        }
 
         Ok(Self {
             read_format,
@@ -350,7 +363,20 @@ impl<'p> Parse<'p> for GroupRead<'p> {
         B: ParseBuf<'p>,
     {
         let read_format = p.config().read_format();
-        assert!(read_format.contains(ReadFormat::GROUP));
+
+        if !read_format.contains(ReadFormat::GROUP) {
+            return Err(ParseError::custom(
+                ErrorKind::UnsupportedConfig, 
+                "attempted to parse a GroupRead with a config that does not have GROUP set in read_format"
+            ));
+        }
+
+        if !(read_format - ReadFormat::all()).is_empty() {
+            return Err(ParseError::custom(
+                ErrorKind::UnsupportedConfig,
+                "read_format contains unsupported flags"
+            ));
+        }
 
         let nr = p.parse_u64()? as usize;
         let time_enabled = p

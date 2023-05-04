@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::fmt::{self, Display};
 
-use crate::parse::{Parse, ParseBuf, Parser};
+use crate::parse::{Parse, ParseBuf, ParseConfig, Parser};
 
-used_in_docs!(Parse, Parser, ParseBuf);
+used_in_docs!(Parse, Parser, ParseBuf, ParseConfig);
 
 type BoxedError = Box<dyn Error + Send + Sync + 'static>;
 
@@ -39,7 +39,7 @@ impl ParseError {
 
     /// Create a new `ParseError` with a custom message.
     pub(crate) fn custom(kind: ErrorKind, msg: impl Message) -> Self {
-        Self::new(CustomMessageError::new(msg)).with_code(kind)
+        Self::new(CustomMessageError::new(msg)).with_kind(kind)
     }
 
     /// Get the [`ErrorKind`] of this error.
@@ -51,7 +51,7 @@ impl ParseError {
         Self { code, source: None }
     }
 
-    pub(crate) fn with_code(self, code: ErrorKind) -> Self {
+    pub(crate) fn with_kind(self, code: ErrorKind) -> Self {
         Self { code, ..self }
     }
 
@@ -79,6 +79,13 @@ pub enum ErrorKind {
     /// [`Eof`](ErrorKind::Eof) errors.
     InvalidRecord,
 
+    /// The [`ParseConfig`] had options that are not yet supported by this
+    /// library.
+    ///
+    /// This is only emitted when the lack of support for said option would
+    /// cause parsing to to return incorrect results.
+    UnsupportedConfig,
+
     /// An external error, forwarded from the [`ParseBuf`] implementation.
     ///
     /// This error will never be emitted by a parse method in this crate.
@@ -90,6 +97,7 @@ impl Display for ParseError {
         match self.code {
             ErrorKind::Eof => f.write_str("unexpected EOF during parsing")?,
             ErrorKind::InvalidRecord => f.write_str("invalid record")?,
+            ErrorKind::UnsupportedConfig => f.write_str("unsupported config")?,
             ErrorKind::External => {
                 // This type should always have a source, but, however, if it doesn't then we
                 // still need to provide a default message.
@@ -123,7 +131,7 @@ impl Error for ParseError {
 impl From<std::io::Error> for ParseError {
     fn from(error: std::io::Error) -> Self {
         match error.kind() {
-            std::io::ErrorKind::UnexpectedEof => Self::new(error).with_code(ErrorKind::Eof),
+            std::io::ErrorKind::UnexpectedEof => Self::new(error).with_kind(ErrorKind::Eof),
             _ => Self::new(error),
         }
     }

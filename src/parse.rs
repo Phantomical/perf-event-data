@@ -105,16 +105,21 @@ where
     }
 
     /// Directly get a reference to the next `len` bytes in the input buffer.
-    pub fn parse_bytes(&mut self, len: usize) -> Result<Cow<'p, [u8]>> {
+    pub fn parse_bytes(&mut self, mut len: usize) -> Result<Cow<'p, [u8]>> {
         if let Some(bytes) = self.parse_bytes_direct(len)? {
             return Ok(Cow::Borrowed(bytes));
         }
 
-        let mut bytes = Vec::with_capacity(len);
-        self.parse_to_slice(bytes.spare_capacity_mut())?;
-        // SAFETY: parse_to_slice completed successfully so all of the vec's spare
-        //         capacity is initialized.
-        unsafe { bytes.set_len(len) };
+        let mut bytes = Vec::with_capacity(self.safe_capacity_bound::<u8>().min(len));
+        while len > 0 {
+            let mut chunk = self.data.chunk()?;
+            chunk.truncate(len);
+            bytes.extend_from_slice(&chunk);
+
+            let chunk_len = chunk.len();
+            len -= chunk_len;
+            self.data.advance(chunk_len);
+        }
 
         Ok(Cow::Owned(bytes))
     }
@@ -259,7 +264,13 @@ where
             return Ok(None);
         }
 
-        let bytes = match self.parse_bytes_direct(len * std::mem::size_of::<T>())? {
+        let byte_len = len.checked_mul(std::mem::size_of::<T>()).ok_or_else(|| {
+            ParseError::custom(
+                ErrorKind::InvalidRecord,
+                "array length in bytes larger than usize::MAX",
+            )
+        })?;
+        let bytes = match self.parse_bytes_direct(byte_len)? {
             Some(bytes) => bytes,
             None => return Ok(None),
         };
@@ -312,14 +323,28 @@ where
         use perf_event_open_sys::bindings::*;
         use std::mem;
 
-        let data_len = header.size as usize - mem::size_of_val(&header);
+        let data_len = (header.size as usize)
+            .checked_sub(mem::size_of_val(&header))
+            .ok_or_else(|| {
+                ParseError::custom(
+                    ErrorKind::InvalidRecord,
+                    "header size was too small to be valid",
+                )
+            })?;
         let mut rp = self.split_at(data_len)?;
         // MMAP and SAMPLE records do not have the sample_id struct.
         // All other records do.
         let (p, sample_id) = match header.type_ {
             PERF_RECORD_MMAP | PERF_RECORD_SAMPLE => (rp, SampleId::default()),
             _ => {
-                let p = rp.split_at(data_len - SampleId::estimate_len(rp.config()))?;
+                let remaining_len = data_len
+                    .checked_sub(SampleId::estimate_len(rp.config()))
+                    .ok_or_else(|| ParseError::custom(
+                        ErrorKind::InvalidRecord,
+                        "config has sample_id_all bit set but record does not have enough data to store the sample_id"
+                    ))?;
+
+                let p = rp.split_at(remaining_len)?;
                 (p, rp.parse()?)
             }
         };

@@ -5,6 +5,7 @@ use crate::flags::BranchSampleFlags;
 use crate::{ReadFormat, SampleFlags};
 
 #[derive(Copy, Clone, Debug, Default)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
 pub(crate) struct RawParseConfig {
     sample_type: SampleFlags,
     read_format: ReadFormat,
@@ -104,5 +105,15 @@ where
             endian: E::default(),
             config: RawParseConfig::from(value),
         }
+    }
+}
+
+#[cfg(feature = "fuzzing")]
+impl<'a, E: Endian + Default> arbitrary::Arbitrary<'a> for ParseConfig<E> {
+    fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<Self> {
+        Ok(Self {
+            endian: E::default(),
+            config: RawParseConfig::arbitrary(u)?,
+        })
     }
 }

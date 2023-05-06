@@ -201,10 +201,10 @@ impl<'p> Parse<'p> for Sample<'p> {
             let dyn_size = p.parse_u64()? as usize;
 
             if dyn_size > data.len() {
-                return Err(
-                    ParseError::custom("stack dyn_size was greater than the record size")
-                        .with_code(ErrorKind::InvalidRecord),
-                );
+                return Err(ParseError::custom(
+                    ErrorKind::InvalidRecord,
+                    "stack dyn_size was greater than the record size",
+                ));
             }
 
             match &mut data {

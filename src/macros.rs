@@ -179,11 +179,13 @@ macro_rules! debug_if {
 macro_rules! option_struct {
     {
         $( #[$attr:meta] )*
+        $( ##[copy $( $copy:tt )?] )?
         $vis:vis struct $name:ident$(<$lt:lifetime>)?: $flag:ty {
             $( $fvis:vis $field:ident : $ty:ty ),* $(,)?
         }
     } => {
         $( #[$attr] )*
+        $( #[derive(Copy, $( _ $copy:tt )?)] )?
         $vis struct $name$(<$lt>)? {
             __flags: $flag,
 
@@ -242,6 +244,8 @@ macro_rules! option_struct {
                 )*
             }
 
+            option_struct!(impl(drop $(, #[copy $($copy:tt)?])?) $name, $($lt,)? $( $field, )*);
+
             impl$(<$lt>)? Clone for $name$(<$lt>)?
             where
                 $( $ty : Clone ),*
@@ -286,5 +290,18 @@ macro_rules! option_struct {
         const $first: $ty = $index;
         option_struct!(impl(index_consts, $index + 1, $ty) $( $rest )*);
     };
+    (impl(drop, #[copy]) $name:ident $(, $lt:lifetime)? $(, $field:ident )* $(,)?) => {};
+    (impl(drop         ) $name:ident $(, $lt:lifetime)? $(, $field:ident )* $(,)?) => {
+        impl$(<$lt>)? Drop for $name$(<$lt>)? {
+            fn drop(&mut self) {
+                $(
+                    if (self.__flags & (1 << Offsets::$field)) != 0 {
+                        unsafe { self.$field.assume_init_drop() };
+                    }
+
+                )*
+            }
+        }
+    }
 
 }

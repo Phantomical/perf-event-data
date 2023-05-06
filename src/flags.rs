@@ -183,3 +183,22 @@ c_enum! {
         const GUEST_USER = bindings::PERF_RECORD_MISC_GUEST_USER as _;
     }
 }
+
+#[cfg(feature = "fuzzing")]
+mod fuzzing {
+    use super::*;
+
+    use arbitrary::{Arbitrary, Result, Unstructured};
+
+    impl<'a> Arbitrary<'a> for SampleFlags {
+        fn arbitrary(u: &mut Unstructured) -> Result<Self> {
+            Ok(Self::from_bits_retain(Arbitrary::arbitrary(u)?))
+        }
+    }
+
+    impl<'a> Arbitrary<'a> for ReadFormat {
+        fn arbitrary(u: &mut Unstructured) -> Result<Self> {
+            Ok(Self::from_bits_retain(Arbitrary::arbitrary(u)?))
+        }
+    }
+}

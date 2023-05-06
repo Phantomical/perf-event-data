@@ -1,0 +1,29 @@
+[package]
+name = "perf-event-data-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = "1"
+perf-event-data = { path = "..", features = ["fuzzing"] }
+
+# Prevent this from interfering with workspaces
+# [workspace]
+# members = ["."]
+
+[[bin]]
+name = "fuzz_record"
+path = "fuzz_targets/fuzz_record.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_record_basic"
+path = "fuzz_targets/fuzz_record_basic.rs"
+test = false
+doc = false

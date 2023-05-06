@@ -41,7 +41,7 @@ impl<'tmp, 'ext: 'tmp> ParseBufChunk<'tmp, 'ext> {
     }
 
     pub(crate) fn truncate(&mut self, len: usize) {
-        if self.len() >= len {
+        if self.len() <= len {
             return;
         }
 
@@ -186,10 +186,12 @@ impl<'p> ParseBuf<'p> for ParseBufCursor<'p> {
             .expect("advanced past the end of the buffer");
         self.offset += count;
 
-        if let Some(chunk) = self.chunks.last() {
+        while let Some(chunk) = self.chunks.last() {
             if self.offset >= chunk.len() {
                 self.offset -= chunk.len();
                 self.chunks.pop();
+            } else {
+                break;
             }
         }
     }

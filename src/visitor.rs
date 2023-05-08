@@ -109,7 +109,11 @@ pub trait Visitor: Sized {
         self.visit_unimplemented(metadata)
     }
 
-    fn visit_switch_cpu_wide<'a>(self, metadata: RecordMetadata) -> Self::Output<'a> {
+    fn visit_switch_cpu_wide<'a>(
+        self,
+        record: SwitchCpuWide,
+        metadata: RecordMetadata,
+    ) -> Self::Output<'a> {
         self.visit_unimplemented(metadata)
     }
 

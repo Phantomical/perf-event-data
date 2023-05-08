@@ -380,7 +380,7 @@ where
             PERF_RECORD_AUX => visitor.visit_aux(p.parse()?, metadata),
             PERF_RECORD_ITRACE_START => visitor.visit_itrace_start(p.parse()?, metadata),
             PERF_RECORD_LOST_SAMPLES => visitor.visit_lost_samples(p.parse()?, metadata),
-            PERF_RECORD_SWITCH_CPU_WIDE => visitor.visit_switch_cpu_wide(metadata),
+            PERF_RECORD_SWITCH_CPU_WIDE => visitor.visit_switch_cpu_wide(p.parse()?, metadata),
             PERF_RECORD_NAMESPACES => visitor.visit_namespaces(p.parse()?, metadata),
             PERF_RECORD_KSYMBOL => visitor.visit_ksymbol(p.parse()?, metadata),
             PERF_RECORD_BPF_EVENT => visitor.visit_bpf_event(p.parse()?, metadata),

@@ -129,7 +129,7 @@ pub trait Visitor: Sized {
         self.visit_unimplemented(metadata)
     }
 
-    fn visit_cgroup(self, record: Cgroup<'_>, metadata: RecordMetadata) -> Self::Output<'_> {
+    fn visit_cgroup(self, record: CGroup<'_>, metadata: RecordMetadata) -> Self::Output<'_> {
         self.visit_unimplemented(metadata)
     }
 

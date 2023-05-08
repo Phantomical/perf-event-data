@@ -34,6 +34,27 @@ pub trait Parse<'p>: Sized {
         B: ParseBuf<'p>;
 }
 
+/// A [`ParseConfig`] combined with a [`ParseBuf`].
+///
+/// This type is the base on which all parsing in this library occurs. It has a
+/// number of helper methods that do common parsing operations needed when
+/// implementing [`Parse`] for a record type.
+///
+/// # Important Methods
+/// If you are using this library to parse an perf event stream emitted either
+/// by [`perf_event_open(2)`][0] or by parsing a `perf.data` file then likely
+/// want one of
+/// - [`parse_record`](Parser::parse_record), or,
+/// - [`parse_record_with_header`](Parse::parse_record_with_header)
+///
+/// If you are implementing [`Parse`] for a type then you will likely be using
+/// - [`parse`](Parser::parse), and,
+/// - [`parse_bytes`](Parser::parse_bytes)
+///
+/// Other methods are provided if they were needed but those should be the main
+/// ones.
+///
+/// [0]: https://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Clone)]
 pub struct Parser<B, E> {
     config: ParseConfig<E>,
@@ -310,6 +331,11 @@ where
         Ok(vec)
     }
 
+    /// Parse record metadata and return a parser for the bytes of the record.
+    ///
+    /// If you have already read the record header, use
+    /// [`parse_metadata_with_header`](Parser::parse_metadata_with_header)
+    /// instead.
     pub fn parse_metadata(&mut self) -> Result<(Parser<impl ParseBuf<'p>, E>, RecordMetadata)> {
         let header = self.parse()?;
         self.parse_metadata_with_header(header)
@@ -353,11 +379,14 @@ where
         Ok((p, metadata))
     }
 
+    /// Parse a record, the record types will be visited by the `visitor`.
     pub fn parse_record<V: Visitor>(&mut self, visitor: V) -> Result<V::Output<'p>> {
         let header = self.parse()?;
         self.parse_record_with_header(visitor, header)
     }
 
+    /// Same as [`parse_record`](Self::parse_record) but required that the
+    /// header be provided.
     pub fn parse_record_with_header<V: Visitor>(
         &mut self,
         visitor: V,

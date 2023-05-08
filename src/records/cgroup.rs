@@ -7,8 +7,8 @@ use std::borrow::Cow;
 /// documentation.
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
-#[derive(Clone)]
-pub struct Cgroup<'a> {
+#[derive(Clone, Debug)]
+pub struct CGroup<'a> {
     /// The cgroup ID.
     pub id: u64,
 
@@ -16,7 +16,7 @@ pub struct Cgroup<'a> {
     pub path: Cow<'a, [u8]>,
 }
 
-impl<'a> Cgroup<'a> {
+impl<'a> CGroup<'a> {
     /// Get `path` as a [`Path`](std::path::Path).
     #[cfg(unix)]
     pub fn path_os(&self) -> &std::path::Path {
@@ -27,15 +27,15 @@ impl<'a> Cgroup<'a> {
         Path::new(OsStr::from_bytes(&self.path))
     }
 
-    pub fn into_owned(self) -> Cgroup<'static> {
-        Cgroup {
+    pub fn into_owned(self) -> CGroup<'static> {
+        CGroup {
             path: self.path.into_owned().into(),
             ..self
         }
     }
 }
 
-impl<'p> Parse<'p> for Cgroup<'p> {
+impl<'p> Parse<'p> for CGroup<'p> {
     fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
     where
         E: Endian,

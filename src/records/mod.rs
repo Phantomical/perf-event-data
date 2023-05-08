@@ -65,6 +65,7 @@ mod sample_id {
     }
 }
 
+use std::borrow::Cow;
 use std::fmt;
 
 use crate::prelude::*;
@@ -167,5 +168,202 @@ impl<'p> Parse<'p> for SampleId {
 impl fmt::Debug for SampleId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
+    }
+}
+
+#[derive(Clone, Debug)]
+#[non_exhaustive]
+pub enum Record<'a> {
+    Mmap(Mmap<'a>),
+    Lost(Lost),
+    Comm(Comm<'a>),
+    Exit(Exit),
+    Throttle(Throttle),
+    Unthrottle(Throttle),
+    Fork(Fork),
+    Read(Read<'a>),
+    Sample(Box<Sample<'a>>),
+    Mmap2(Mmap2<'a>),
+    Aux(Aux),
+    ITraceStart(ITraceStart),
+    LostSamples(LostSamples),
+    Switch,
+    SwitchCpuWide(SwitchCpuWide),
+    Namespaces(Namespaces<'a>),
+    KSymbol(KSymbol<'a>),
+    BpfEvent(BpfEvent),
+    CGroup(CGroup<'a>),
+    TextPoke(TextPoke<'a>),
+    AuxOutputHwId(AuxOutputHwId),
+    Unknown { ty: u32, data: Cow<'a, [u8]> },
+}
+
+macro_rules! record_from {
+    ($ty:ident) => {
+        impl<'a> From<$ty> for Record<'a> {
+            fn from(value: $ty) -> Self {
+                Self::$ty(value)
+            }
+        }
+    };
+    ($ty:ident<$lt:lifetime>) => {
+        impl<$lt> From<$ty<$lt>> for Record<$lt> {
+            fn from(value: $ty<$lt>) -> Self {
+                Self::$ty(value)
+            }
+        }
+    };
+}
+
+record_from!(Mmap<'a>);
+record_from!(Lost);
+record_from!(Comm<'a>);
+// These are both the same struct
+// record_from!(Exit);
+// record_from!(Fork);
+record_from!(Read<'a>);
+record_from!(Mmap2<'a>);
+record_from!(Aux);
+record_from!(ITraceStart);
+record_from!(LostSamples);
+record_from!(SwitchCpuWide);
+record_from!(Namespaces<'a>);
+record_from!(KSymbol<'a>);
+record_from!(BpfEvent);
+record_from!(CGroup<'a>);
+record_from!(TextPoke<'a>);
+record_from!(AuxOutputHwId);
+
+impl<'a> From<Sample<'a>> for Record<'a> {
+    fn from(value: Sample<'a>) -> Self {
+        Self::Sample(Box::new(value))
+    }
+}
+
+struct RecordVisitor;
+
+impl crate::Visitor for RecordVisitor {
+    type Output<'a> = crate::parse::Result<Record<'a>>;
+
+    fn visit_unimplemented<'a>(self, metadata: crate::RecordMetadata) -> Self::Output<'a> {
+        panic!(
+            "parsing for records of type {} is not implemented",
+            metadata.ty()
+        );
+    }
+
+    fn visit_mmap(self, record: Mmap<'_>, _: crate::RecordMetadata) -> Self::Output<'_> {
+        Ok(record.into())
+    }
+
+    fn visit_lost<'a>(self, record: Lost, _: crate::RecordMetadata) -> Self::Output<'a> {
+        Ok(record.into())
+    }
+
+    fn visit_comm(self, record: Comm<'_>, _: crate::RecordMetadata) -> Self::Output<'_> {
+        Ok(record.into())
+    }
+
+    fn visit_exit<'a>(self, record: Exit, _: crate::RecordMetadata) -> Self::Output<'a> {
+        Ok(Record::Exit(record))
+    }
+
+    fn visit_throttle<'a>(self, record: Throttle, _: crate::RecordMetadata) -> Self::Output<'a> {
+        Ok(Record::Throttle(record))
+    }
+
+    fn visit_unthrottle<'a>(self, record: Throttle, _: crate::RecordMetadata) -> Self::Output<'a> {
+        Ok(Record::Unthrottle(record))
+    }
+
+    fn visit_fork<'a>(self, record: Fork, _: crate::RecordMetadata) -> Self::Output<'a> {
+        Ok(Record::Fork(record))
+    }
+
+    fn visit_read(self, record: Read<'_>, _: crate::RecordMetadata) -> Self::Output<'_> {
+        Ok(record.into())
+    }
+
+    fn visit_sample(self, record: Sample<'_>, _: crate::RecordMetadata) -> Self::Output<'_> {
+        Ok(record.into())
+    }
+
+    fn visit_mmap2(self, record: Mmap2<'_>, _: crate::RecordMetadata) -> Self::Output<'_> {
+        Ok(record.into())
+    }
+
+    fn visit_aux<'a>(self, record: Aux, _: crate::RecordMetadata) -> Self::Output<'a> {
+        Ok(record.into())
+    }
+
+    fn visit_itrace_start<'a>(
+        self,
+        record: ITraceStart,
+        _: crate::RecordMetadata,
+    ) -> Self::Output<'a> {
+        Ok(record.into())
+    }
+
+    fn visit_lost_samples<'a>(
+        self,
+        record: LostSamples,
+        _: crate::RecordMetadata,
+    ) -> Self::Output<'a> {
+        Ok(record.into())
+    }
+
+    fn visit_switch<'a>(self, _: crate::RecordMetadata) -> Self::Output<'a> {
+        Ok(Record::Switch)
+    }
+
+    fn visit_switch_cpu_wide<'a>(
+        self,
+        record: SwitchCpuWide,
+        _: crate::RecordMetadata,
+    ) -> Self::Output<'a> {
+        Ok(record.into())
+    }
+
+    fn visit_namespaces(
+        self,
+        record: Namespaces<'_>,
+        _: crate::RecordMetadata,
+    ) -> Self::Output<'_> {
+        Ok(record.into())
+    }
+
+    fn visit_ksymbol(self, record: KSymbol<'_>, _: crate::RecordMetadata) -> Self::Output<'_> {
+        Ok(record.into())
+    }
+
+    fn visit_bpf_event<'a>(self, record: BpfEvent, _: crate::RecordMetadata) -> Self::Output<'a> {
+        Ok(record.into())
+    }
+
+    fn visit_cgroup(self, record: CGroup<'_>, _: crate::RecordMetadata) -> Self::Output<'_> {
+        Ok(record.into())
+    }
+
+    fn visit_text_poke(self, record: TextPoke<'_>, _: crate::RecordMetadata) -> Self::Output<'_> {
+        Ok(record.into())
+    }
+
+    fn visit_aux_output_hw_id<'a>(
+        self,
+        record: AuxOutputHwId,
+        _: crate::RecordMetadata,
+    ) -> Self::Output<'a> {
+        Ok(record.into())
+    }
+
+    fn visit_unknown(
+        self,
+        data: Cow<'_, [u8]>,
+        metadata: crate::RecordMetadata,
+    ) -> Self::Output<'_> {
+        Ok(Record::Unknown {
+            ty: metadata.ty(),
+            data,
+        })
     }
 }

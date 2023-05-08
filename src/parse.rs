@@ -45,7 +45,7 @@ pub trait Parse<'p>: Sized {
 /// by [`perf_event_open(2)`][0] or by parsing a `perf.data` file then likely
 /// want one of
 /// - [`parse_record`](Parser::parse_record), or,
-/// - [`parse_record_with_header`](Parse::parse_record_with_header)
+/// - [`parse_record_with_header`](Parser::parse_record_with_header)
 ///
 /// If you are implementing [`Parse`] for a type then you will likely be using
 /// - [`parse`](Parser::parse), and,
@@ -380,18 +380,18 @@ where
     }
 
     /// Parse a record, the record types will be visited by the `visitor`.
-    pub fn parse_record<V: Visitor>(&mut self, visitor: V) -> Result<V::Output<'p>> {
+    pub fn parse_record<V: Visitor<'p>>(&mut self, visitor: V) -> Result<V::Output> {
         let header = self.parse()?;
         self.parse_record_with_header(visitor, header)
     }
 
     /// Same as [`parse_record`](Self::parse_record) but required that the
     /// header be provided.
-    pub fn parse_record_with_header<V: Visitor>(
+    pub fn parse_record_with_header<V: Visitor<'p>>(
         &mut self,
         visitor: V,
         header: bindings::perf_event_header,
-    ) -> Result<V::Output<'p>> {
+    ) -> Result<V::Output> {
         use perf_event_open_sys::bindings::*;
 
         let (mut p, metadata) = self.parse_metadata_with_header(header)?;

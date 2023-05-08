@@ -69,30 +69,43 @@ use std::fmt;
 
 use crate::prelude::*;
 
+/// A subset of the sample fields that can be recorded in non-SAMPLE records.
+///
+/// This will be empty by default unless `sample_id_all` was set when
+/// configuring the perf event counter.
 #[derive(Copy, Clone, Default)]
 pub struct SampleId(sample_id::SampleId);
 
 impl SampleId {
+    /// The process ID that generated this event.
     pub fn pid(&self) -> Option<u32> {
         self.0.pid().copied()
     }
 
+    /// The thread ID that generated this event.
     pub fn tid(&self) -> Option<u32> {
         self.0.tid().copied()
     }
 
+    /// The time at which this event was recorded.
+    ///
+    /// The clock used to record the time depends on how the clock was
+    /// configured when setting up the counter.
     pub fn time(&self) -> Option<u64> {
         self.0.time().copied()
     }
 
+    /// The unique kernel-assigned ID for the leader of this counter group.
     pub fn id(&self) -> Option<u64> {
         self.0.id().copied()
     }
 
+    /// The unique kernel-assigned ID for the counter that generated this event.
     pub fn stream_id(&self) -> Option<u64> {
         self.0.stream_id().copied()
     }
 
+    /// The CPU on which this event was recorded.
     pub fn cpu(&self) -> Option<u32> {
         self.0.cpu().copied()
     }

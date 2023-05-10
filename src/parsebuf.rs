@@ -190,7 +190,7 @@ impl<'p> ParseBufCursor<'p> {
 
         match &self.chunks[0] {
             Cow::Borrowed(data) => Some(*data),
-            _ => None
+            _ => None,
         }
     }
 }

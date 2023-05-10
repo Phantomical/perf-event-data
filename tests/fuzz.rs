@@ -6,14 +6,10 @@ use perf_event_open_sys::bindings::perf_event_attr;
 fn fuzz_test(data: &[u8]) {
     struct ParseVisitor;
 
-    impl Visitor for ParseVisitor {
-        type Output<'a> = ();
+    impl Visitor<'_> for ParseVisitor {
+        type Output = ();
 
-        fn visit_unimplemented<'a>(
-            self,
-            _metadata: perf_event_data::RecordMetadata,
-        ) -> Self::Output<'a> {
-        }
+        fn visit_unimplemented<'a>(self, _: perf_event_data::RecordMetadata) {}
     }
 
     let attr_len = std::mem::size_of::<perf_event_attr>();

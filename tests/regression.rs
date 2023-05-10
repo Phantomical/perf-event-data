@@ -6,14 +6,10 @@ use perf_event_data::Visitor;
 
 struct ParseVisitor;
 
-impl Visitor for ParseVisitor {
-    type Output<'a> = ();
+impl Visitor<'_> for ParseVisitor {
+    type Output = ();
 
-    fn visit_unimplemented<'a>(
-        self,
-        _metadata: perf_event_data::RecordMetadata,
-    ) -> Self::Output<'a> {
-    }
+    fn visit_unimplemented(self, _: perf_event_data::RecordMetadata) {}
 }
 
 /// Allocator that panics if we allocate something too large.

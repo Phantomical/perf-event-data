@@ -13,13 +13,8 @@ fuzz_target!(|data: &[u8]| {
 
 struct ParseVisitor;
 
-impl Visitor for ParseVisitor {
-    type Output<'a> = ();
+impl Visitor<'_> for ParseVisitor {
+    type Output = ();
 
-    fn visit_unimplemented<'a>(
-        self,
-        _metadata: perf_event_data::RecordMetadata,
-    ) -> Self::Output<'a> {
-        ()
-    }
+    fn visit_unimplemented(self, _: perf_event_data::RecordMetadata) {}
 }

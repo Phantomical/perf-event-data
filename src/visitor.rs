@@ -11,7 +11,7 @@ used_in_docs!(Parser);
 #[derive(Clone, Debug)]
 pub struct RecordMetadata {
     ty: u32,
-    misc: MiscFlags,
+    misc: u16,
     sample_id: SampleId,
 }
 
@@ -20,7 +20,7 @@ impl RecordMetadata {
     pub(crate) fn new(header: bindings::perf_event_header, sample_id: SampleId) -> Self {
         Self {
             ty: header.type_,
-            misc: MiscFlags::from_bits_retain(header.misc),
+            misc: header.misc,
             sample_id,
         }
     }
@@ -33,7 +33,7 @@ impl RecordMetadata {
 
     /// Miscellaneous flags set by the kernel.
     #[inline]
-    pub fn misc(&self) -> MiscFlags {
+    pub fn misc(&self) -> u16 {
         self.misc
     }
 

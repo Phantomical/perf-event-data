@@ -1,18 +1,14 @@
 use crate::prelude::*;
 use std::borrow::Cow;
 
-use crate::MiscFlags;
-
-used_in_docs!(MiscFlags);
-
 /// COMM records indicate changes in process names.
 ///
 /// There are multiple ways that this could happen: [`execve(2)`],
 /// [`prctl(PR_SET_NAME)`], as well as writing to `/proc/self/comm`.
 ///
-/// Since Linux 3.10 the kernel will set the [`COMM_EXEC`] bit in
-/// [`MiscFlags`] if the record is due to an [`execve(2)`] syscall.
-/// You can set `comm_exec` when building to detect whether this is supported.
+/// Since Linux 3.10 the kernel will set the `COMM_EXEC` bit in the misc flags
+/// if the record is due to an [`execve(2)`] syscall. You can set `comm_exec`
+/// when building to detect whether this is supported.
 ///
 /// This struct corresponds to `PERF_RECORD_COMM`. See the [manpage] for more
 /// documentation.

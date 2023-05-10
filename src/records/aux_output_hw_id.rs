@@ -14,6 +14,7 @@ use crate::prelude::*;
 /// [src]: https://sourcegraph.com/github.com/torvalds/linux@eb7081409f94a9a8608593d0fb63a1aa3d6f95d8/-/blob/tools/include/uapi/linux/perf_event.h?L1205
 #[derive(Copy, Clone, Debug)]
 pub struct AuxOutputHwId {
+    /// An architecture-specific hardware ID.
     pub hw_id: u64,
 }
 

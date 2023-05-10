@@ -125,13 +125,11 @@ where
         Ok(Some(&chunk[..len]))
     }
 
-    /// Directly get a reference to the next `len` bytes in the input buffer.
-    pub fn parse_bytes(&mut self, mut len: usize) -> Result<Cow<'p, [u8]>> {
-        if let Some(bytes) = self.parse_bytes_direct(len)? {
-            return Ok(Cow::Borrowed(bytes));
-        }
-
+    /// Safe implementation for when we cannot preallocate the buffer.
+    #[cold]
+    fn parse_bytes_slow(&mut self, mut len: usize) -> Result<Vec<u8>> {
         let mut bytes = Vec::with_capacity(self.safe_capacity_bound::<u8>().min(len));
+
         while len > 0 {
             let mut chunk = self.data.chunk()?;
             chunk.truncate(len);
@@ -142,22 +140,43 @@ where
             self.data.advance(chunk_len);
         }
 
+        Ok(bytes)
+    }
+
+    /// Directly get a reference to the next `len` bytes in the input buffer.
+    pub fn parse_bytes(&mut self, len: usize) -> Result<Cow<'p, [u8]>> {
+        if let Some(bytes) = self.parse_bytes_direct(len)? {
+            return Ok(Cow::Borrowed(bytes));
+        }
+
+        match self.data.remaining_hint() {
+            Some(hint) if hint >= len => (),
+            _ => return Ok(Cow::Owned(self.parse_bytes_slow(len)?)),
+        }
+
+        let mut bytes = Vec::with_capacity(len);
+        self.parse_to_slice(bytes.spare_capacity_mut())?;
+        unsafe { bytes.set_len(len) };
         Ok(Cow::Owned(bytes))
     }
 
     /// Parse a slice in its entirety. If this returns successfully then the
     /// entire slice has been initialized.
-    fn parse_to_slice(&mut self, mut slice: &mut [MaybeUninit<u8>]) -> Result<()> {
-        while !slice.is_empty() {
+    fn parse_to_slice(&mut self, slice: &mut [MaybeUninit<u8>]) -> Result<()> {
+        let mut dst = slice.as_mut_ptr() as *mut u8;
+        let mut len = slice.len();
+
+        while slice.len() > 0 {
             let chunk = self.data.chunk()?;
-            let len = slice.len().min(chunk.len());
+            let chunk_len = chunk.len().min(len);
 
             unsafe {
-                std::ptr::copy_nonoverlapping(chunk.as_ptr(), slice.as_mut_ptr() as *mut u8, len)
+                std::ptr::copy_nonoverlapping(chunk.as_ptr(), dst, chunk_len);
+                dst = dst.add(chunk_len);
+                len -= chunk_len;
             };
 
-            slice = slice.split_at_mut(len).1;
-            self.data.advance(len);
+            self.data.advance(chunk_len);
         }
 
         Ok(())

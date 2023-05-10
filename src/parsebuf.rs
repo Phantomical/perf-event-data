@@ -33,6 +33,7 @@ pub enum ParseBufChunk<'tmp, 'ext: 'tmp> {
 }
 
 impl<'tmp, 'ext: 'tmp> ParseBufChunk<'tmp, 'ext> {
+    #[inline]
     pub(crate) fn to_cow(self) -> Cow<'ext, [u8]> {
         match self {
             Self::Temporary(data) => Cow::Owned(data.to_vec()),
@@ -40,6 +41,7 @@ impl<'tmp, 'ext: 'tmp> ParseBufChunk<'tmp, 'ext> {
         }
     }
 
+    #[inline]
     pub(crate) fn truncate(&mut self, len: usize) {
         if self.len() <= len {
             return;
@@ -55,6 +57,7 @@ impl<'tmp, 'ext: 'tmp> ParseBufChunk<'tmp, 'ext> {
 impl<'tmp, 'ext: 'tmp> Deref for ParseBufChunk<'tmp, 'ext> {
     type Target = [u8];
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         match *self {
             Self::Temporary(bytes) => bytes,
@@ -70,9 +73,14 @@ impl<'tmp, 'ext: 'tmp> Deref for ParseBufChunk<'tmp, 'ext> {
 ///   view into this buffer.
 /// - A position, [`advance`] moves this forward.
 ///
+/// # Safety
+/// - If [`remaining_hint`] returns `Some` then the returned value must be
+///   accurate.
+///
 /// [`chunk`]: ParseBuf::chunk
 /// [`advance`]: ParseBuf::advance
-pub trait ParseBuf<'p> {
+/// [`remaining_hint`]: ParseBuf::remaining_hint
+pub unsafe trait ParseBuf<'p> {
     /// Returns a chunk starting at the current position.
     ///
     /// This method must never return an empty chunk. If an empty chunk would be
@@ -100,7 +108,7 @@ pub trait ParseBuf<'p> {
     }
 }
 
-impl<'p> ParseBuf<'p> for &'p [u8] {
+unsafe impl<'p> ParseBuf<'p> for &'p [u8] {
     fn chunk(&mut self) -> Result<ParseBufChunk<'_, 'p>> {
         if self.is_empty() {
             return Err(ParseError::eof());
@@ -120,7 +128,7 @@ impl<'p> ParseBuf<'p> for &'p [u8] {
 
 // This impl would work for any type that implements BufRead. Unfortunately,
 // that conflicts with the implementation of ParseBuf for &[u8]
-impl<'p, R> ParseBuf<'p> for BufReader<R>
+unsafe impl<'p, R> ParseBuf<'p> for BufReader<R>
 where
     R: Read,
 {
@@ -171,7 +179,26 @@ impl<'p> ParseBufCursor<'p> {
     }
 }
 
-impl<'p> ParseBuf<'p> for ParseBufCursor<'p> {
+impl<'p> ParseBufCursor<'p> {
+    #[cold]
+    fn advance_slow(&mut self) {
+        while let Some(chunk) = self.chunks.last() {
+            if self.offset < chunk.len() {
+                break;
+            }
+
+            self.offset -= chunk.len();
+            self.chunks.pop();
+        }
+
+        if self.chunks.is_empty() {
+            assert_eq!(self.offset, 0, "advanced past the end of the buffer");
+        }
+    }
+}
+
+unsafe impl<'p> ParseBuf<'p> for ParseBufCursor<'p> {
+    #[inline]
     fn chunk(&mut self) -> Result<ParseBufChunk<'_, 'p>> {
         match self.chunks.last().ok_or_else(ParseError::eof)? {
             Cow::Borrowed(data) => Ok(ParseBufChunk::External(&data[self.offset..])),
@@ -179,23 +206,24 @@ impl<'p> ParseBuf<'p> for ParseBufCursor<'p> {
         }
     }
 
+    #[inline]
     fn advance(&mut self, count: usize) {
-        self.len = self
-            .len
+        self.offset = self
+            .offset
+            .checked_add(count)
+            .expect("advanced past the end of the buffer");
+
+        self.len
             .checked_sub(count)
             .expect("advanced past the end of the buffer");
-        self.offset += count;
 
-        while let Some(chunk) = self.chunks.last() {
-            if self.offset >= chunk.len() {
-                self.offset -= chunk.len();
-                self.chunks.pop();
-            } else {
-                break;
-            }
+        match self.chunks.last() {
+            Some(chunk) if chunk.len() > self.offset => (),
+            _ => self.advance_slow(),
         }
     }
 
+    #[inline]
     fn remaining_hint(&self) -> Option<usize> {
         Some(self.len)
     }

@@ -27,6 +27,7 @@ impl<'a> CGroup<'a> {
         Path::new(OsStr::from_bytes(&self.path))
     }
 
+    /// Convert all the borrowed data in this `CGroup` into owned data.
     pub fn into_owned(self) -> CGroup<'static> {
         CGroup {
             path: self.path.into_owned().into(),

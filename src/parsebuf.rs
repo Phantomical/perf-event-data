@@ -109,6 +109,7 @@ pub unsafe trait ParseBuf<'p> {
 }
 
 unsafe impl<'p> ParseBuf<'p> for &'p [u8] {
+    #[inline]
     fn chunk(&mut self) -> Result<ParseBufChunk<'_, 'p>> {
         if self.is_empty() {
             return Err(ParseError::eof());
@@ -117,10 +118,12 @@ unsafe impl<'p> ParseBuf<'p> for &'p [u8] {
         Ok(ParseBufChunk::External(self))
     }
 
+    #[inline]
     fn advance(&mut self, count: usize) {
         *self = self.split_at(count).1;
     }
 
+    #[inline]
     fn remaining_hint(&self) -> Option<usize> {
         Some(self.len())
     }
@@ -132,6 +135,7 @@ unsafe impl<'p, R> ParseBuf<'p> for BufReader<R>
 where
     R: Read,
 {
+    #[inline]
     fn chunk(&mut self) -> Result<ParseBufChunk<'_, 'p>> {
         let buf = self.fill_buf()?;
 
@@ -142,6 +146,7 @@ where
         }
     }
 
+    #[inline]
     fn advance(&mut self, count: usize) {
         self.consume(count)
     }
@@ -176,6 +181,17 @@ impl<'p> ParseBufCursor<'p> {
             offset: 0,
             len: total_len,
         })
+    }
+
+    pub(crate) fn as_slice(&self) -> Option<&'p [u8]> {
+        if self.chunks.len() != 1 {
+            return None;
+        }
+
+        match &self.chunks[0] {
+            Cow::Borrowed(data) => Some(*data),
+            _ => None
+        }
     }
 }
 

@@ -60,7 +60,7 @@ impl ParseError {
     }
 
     /// More input was needed before the item could be successfully parsed.
-    #[inline]
+    #[cold]
     pub fn eof() -> Self {
         Self::from_code(ErrorKind::Eof)
     }

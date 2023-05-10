@@ -26,8 +26,7 @@ where
             Self::Owned(data) if len == 0 => (data.into(), Cow::Borrowed(&[])),
             Self::Owned(data) if len == data.len() => (Cow::Borrowed(&[]), data.into()),
             Self::Owned(mut data) => {
-                let rest = data.split_at(len).1.to_vec();
-                data.truncate(len);
+                let rest: Vec<T> = data.drain(len..).collect();
                 (data.into(), rest.into())
             }
         }

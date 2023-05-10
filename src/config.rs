@@ -1,7 +1,6 @@
-use perf_event_open_sys::bindings::perf_event_attr;
+use perf_event_open_sys::bindings::{perf_event_attr, PERF_SAMPLE_BRANCH_HW_INDEX};
 
 use crate::endian::Endian;
-use crate::flags::BranchSampleFlags;
 use crate::{ReadFormat, SampleFlags};
 
 #[derive(Copy, Clone, Debug, Default)]
@@ -89,8 +88,7 @@ impl From<perf_event_attr> for RawParseConfig {
             read_format: ReadFormat::from_bits_retain(attrs.read_format),
             sample_regs_user: attrs.sample_regs_user,
             sample_regs_intr: attrs.sample_regs_intr,
-            branch_hw_index: BranchSampleFlags::from_bits_retain(attrs.branch_sample_type)
-                .contains(BranchSampleFlags::HW_INDEX),
+            branch_hw_index: (attrs.branch_sample_type & PERF_SAMPLE_BRANCH_HW_INDEX as u64) != 0,
             sample_id_all: attrs.sample_id_all() != 0,
         }
     }

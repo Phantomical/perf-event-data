@@ -47,30 +47,6 @@ bitflags! {
     }
 }
 
-bitflags! {
-    #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Default)]
-    pub struct BranchSampleFlags : u64 {
-        const USER          = bindings::PERF_SAMPLE_BRANCH_USER as _;
-        const KERNEL        = bindings::PERF_SAMPLE_BRANCH_KERNEL as _;
-        const HV            = bindings::PERF_SAMPLE_BRANCH_HV as _;
-        const ANY           = bindings::PERF_SAMPLE_BRANCH_ANY as _;
-        const ANY_CALL      = bindings::PERF_SAMPLE_BRANCH_ANY_CALL as _;
-        const ANY_RETURN    = bindings::PERF_SAMPLE_BRANCH_ANY_RETURN as _;
-        const IND_CALL      = bindings::PERF_SAMPLE_BRANCH_IND_CALL as _;
-        const ABORT_TX      = bindings::PERF_SAMPLE_BRANCH_ABORT_TX as _;
-        const IN_TX         = bindings::PERF_SAMPLE_BRANCH_IN_TX as _;
-        const NO_TX         = bindings::PERF_SAMPLE_BRANCH_NO_TX as _;
-        const COND          = bindings::PERF_SAMPLE_BRANCH_COND as _;
-        const CALL_STACK    = bindings::PERF_SAMPLE_BRANCH_CALL_STACK as _;
-        const IND_JUMP      = bindings::PERF_SAMPLE_BRANCH_IND_JUMP as _;
-        const CALL          = bindings::PERF_SAMPLE_BRANCH_CALL as _;
-        const NO_FLAGS      = bindings::PERF_SAMPLE_BRANCH_NO_FLAGS as _;
-        const NO_CYCLES     = bindings::PERF_SAMPLE_BRANCH_NO_CYCLES as _;
-        const TYPE_SAVE     = bindings::PERF_SAMPLE_BRANCH_TYPE_SAVE as _;
-        const HW_INDEX      = bindings::PERF_SAMPLE_BRANCH_HW_INDEX as _;
-        const PRIV_SAVE     = bindings::PERF_SAMPLE_BRANCH_PRIV_SAVE as _;
-    }
-}
 
 bitflags! {
     /// Flags that control what data is returned when reading from a

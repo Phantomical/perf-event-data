@@ -23,6 +23,7 @@ pub struct KSymbol<'a> {
 }
 
 impl<'a> KSymbol<'a> {
+    /// Convert all borrowed data in this `KSymbol` into owned data.
     pub fn into_owned(self) -> KSymbol<'static> {
         KSymbol {
             name: self.name.into_owned().into(),

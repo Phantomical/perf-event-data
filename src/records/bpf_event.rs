@@ -8,6 +8,7 @@ use perf_event_open_sys::bindings;
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Copy, Clone, Debug)]
+#[allow(missing_docs)]
 pub struct BpfEvent {
     pub ty: BpfEventType,
     pub flags: u16,

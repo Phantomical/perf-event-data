@@ -47,7 +47,6 @@ bitflags! {
     }
 }
 
-
 bitflags! {
     /// Flags that control what data is returned when reading from a
     /// perf_event file descriptor.

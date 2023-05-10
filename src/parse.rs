@@ -425,11 +425,11 @@ where
         self.parse_record_with_header(visitor, header)
     }
 
-    fn parse_record_impl<V: Visitor>(
+    fn parse_record_impl<V: Visitor<'p>>(
         &mut self,
         visitor: V,
         metadata: RecordMetadata,
-    ) -> Result<V::Output<'p>> {
+    ) -> Result<V::Output> {
         use perf_event_open_sys::bindings::*;
 
         Ok(match metadata.ty() {
@@ -459,11 +459,11 @@ where
 
     // Same as parse_record_impl but marked as #[slow]
     #[cold]
-    fn parse_record_slow<V: Visitor>(
+    fn parse_record_slow<V: Visitor<'p>>(
         &mut self,
         visitor: V,
         metadata: RecordMetadata,
-    ) -> Result<V::Output<'p>> {
+    ) -> Result<V::Output> {
         self.parse_record_impl(visitor, metadata)
     }
 

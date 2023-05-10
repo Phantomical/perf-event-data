@@ -457,16 +457,6 @@ where
         })
     }
 
-    // Same as parse_record_impl but marked as #[slow]
-    #[cold]
-    fn parse_record_slow<V: Visitor<'p>>(
-        &mut self,
-        visitor: V,
-        metadata: RecordMetadata,
-    ) -> Result<V::Output> {
-        self.parse_record_impl(visitor, metadata)
-    }
-
     /// Same as [`parse_record`](Self::parse_record) but required that the
     /// header be provided.
     pub fn parse_record_with_header<V: Visitor<'p>>(
@@ -478,10 +468,14 @@ where
 
         match p.data.as_slice() {
             Some(data) => {
+                // Fast path: the data is all in one contiguous borrowed slice so we can
+                //            parse based on that.
                 let mut p = Parser::new(data, p.config().clone());
                 p.parse_record_impl(visitor, metadata)
             }
-            None => p.parse_record_slow(visitor, metadata),
+            // Slow path: we have either an unowned slice or multiple slices so the ParseBuf
+            //            implementation needs to do more work to handle that.
+            None => p.parse_record_impl(visitor, metadata),
         }
     }
 }

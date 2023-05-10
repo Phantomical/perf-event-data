@@ -2,8 +2,8 @@ use std::borrow::Cow;
 
 use perf_event_open_sys::bindings;
 
-use crate::*;
 use crate::parse::Parser;
+use crate::*;
 
 used_in_docs!(Parser);
 

@@ -125,13 +125,11 @@ where
         Ok(Some(&chunk[..len]))
     }
 
-    /// Directly get a reference to the next `len` bytes in the input buffer.
-    pub fn parse_bytes(&mut self, mut len: usize) -> Result<Cow<'p, [u8]>> {
-        if let Some(bytes) = self.parse_bytes_direct(len)? {
-            return Ok(Cow::Borrowed(bytes));
-        }
-
+    /// Safe implementation for when we cannot preallocate the buffer.
+    #[cold]
+    fn parse_bytes_slow(&mut self, mut len: usize) -> Result<Vec<u8>> {
         let mut bytes = Vec::with_capacity(self.safe_capacity_bound::<u8>().min(len));
+
         while len > 0 {
             let mut chunk = self.data.chunk()?;
             chunk.truncate(len);
@@ -142,30 +140,65 @@ where
             self.data.advance(chunk_len);
         }
 
+        Ok(bytes)
+    }
+
+    /// Directly get a reference to the next `len` bytes in the input buffer.
+    pub fn parse_bytes(&mut self, len: usize) -> Result<Cow<'p, [u8]>> {
+        if let Some(bytes) = self.parse_bytes_direct(len)? {
+            return Ok(Cow::Borrowed(bytes));
+        }
+
+        match self.data.remaining_hint() {
+            Some(hint) if hint >= len => (),
+            _ => return Ok(Cow::Owned(self.parse_bytes_slow(len)?)),
+        }
+
+        let mut bytes = Vec::with_capacity(len);
+        self.parse_to_slice(bytes.spare_capacity_mut())?;
+        unsafe { bytes.set_len(len) };
         Ok(Cow::Owned(bytes))
     }
 
     /// Parse a slice in its entirety. If this returns successfully then the
     /// entire slice has been initialized.
-    fn parse_to_slice(&mut self, mut slice: &mut [MaybeUninit<u8>]) -> Result<()> {
-        while !slice.is_empty() {
+    fn parse_to_slice(&mut self, slice: &mut [MaybeUninit<u8>]) -> Result<()> {
+        let mut dst = slice.as_mut_ptr() as *mut u8;
+        let mut len = slice.len();
+
+        while len > 0 {
             let chunk = self.data.chunk()?;
-            let len = slice.len().min(chunk.len());
+            let chunk_len = chunk.len().min(len);
 
             unsafe {
-                std::ptr::copy_nonoverlapping(chunk.as_ptr(), slice.as_mut_ptr() as *mut u8, len)
+                std::ptr::copy_nonoverlapping(chunk.as_ptr(), dst, chunk_len);
+                dst = dst.add(chunk_len);
+                len -= chunk_len;
             };
 
-            slice = slice.split_at_mut(len).1;
-            self.data.advance(len);
+            self.data.advance(chunk_len);
         }
 
         Ok(())
     }
 
-    pub(crate) fn parse_array<const N: usize>(&mut self) -> Result<[u8; N]> {
+    #[cold]
+    fn parse_array_slow<const N: usize>(&mut self) -> Result<[u8; N]> {
         let mut array = [0u8; N];
         self.parse_to_slice(unsafe { array.align_to_mut().1 })?;
+        Ok(array)
+    }
+
+    pub(crate) fn parse_array<const N: usize>(&mut self) -> Result<[u8; N]> {
+        let chunk = self.data.chunk()?;
+
+        if chunk.len() < N {
+            return self.parse_array_slow();
+        }
+
+        let mut array = [0u8; N];
+        array.copy_from_slice(&chunk[..N]);
+        self.data.advance(N);
         Ok(array)
     }
 
@@ -341,11 +374,10 @@ where
         self.parse_metadata_with_header(header)
     }
 
-    /// Parse the record metadata and return a parser for only the record bytes.
-    pub fn parse_metadata_with_header(
+    fn parse_metadata_with_header_impl(
         &mut self,
         header: bindings::perf_event_header,
-    ) -> Result<(Parser<impl ParseBuf<'p>, E>, RecordMetadata)> {
+    ) -> Result<(Parser<ParseBufCursor<'p>, E>, RecordMetadata)> {
         use perf_event_open_sys::bindings::*;
         use std::mem;
 
@@ -379,10 +411,50 @@ where
         Ok((p, metadata))
     }
 
+    /// Parse the record metadata and return a parser for only the record bytes.
+    pub fn parse_metadata_with_header(
+        &mut self,
+        header: bindings::perf_event_header,
+    ) -> Result<(Parser<impl ParseBuf<'p>, E>, RecordMetadata)> {
+        self.parse_metadata_with_header_impl(header)
+    }
+
     /// Parse a record, the record types will be visited by the `visitor`.
     pub fn parse_record<V: Visitor<'p>>(&mut self, visitor: V) -> Result<V::Output> {
         let header = self.parse()?;
         self.parse_record_with_header(visitor, header)
+    }
+
+    fn parse_record_impl<V: Visitor<'p>>(
+        &mut self,
+        visitor: V,
+        metadata: RecordMetadata,
+    ) -> Result<V::Output> {
+        use perf_event_open_sys::bindings::*;
+
+        Ok(match metadata.ty() {
+            PERF_RECORD_MMAP => visitor.visit_mmap(self.parse()?, metadata),
+            PERF_RECORD_LOST => visitor.visit_lost(self.parse()?, metadata),
+            PERF_RECORD_COMM => visitor.visit_comm(self.parse()?, metadata),
+            PERF_RECORD_EXIT => visitor.visit_exit(self.parse()?, metadata),
+            PERF_RECORD_THROTTLE => visitor.visit_throttle(self.parse()?, metadata),
+            PERF_RECORD_UNTHROTTLE => visitor.visit_unthrottle(self.parse()?, metadata),
+            PERF_RECORD_FORK => visitor.visit_fork(self.parse()?, metadata),
+            PERF_RECORD_READ => visitor.visit_read(self.parse()?, metadata),
+            PERF_RECORD_SAMPLE => visitor.visit_sample(self.parse()?, metadata),
+            PERF_RECORD_MMAP2 => visitor.visit_mmap2(self.parse()?, metadata),
+            PERF_RECORD_AUX => visitor.visit_aux(self.parse()?, metadata),
+            PERF_RECORD_ITRACE_START => visitor.visit_itrace_start(self.parse()?, metadata),
+            PERF_RECORD_LOST_SAMPLES => visitor.visit_lost_samples(self.parse()?, metadata),
+            PERF_RECORD_SWITCH_CPU_WIDE => visitor.visit_switch_cpu_wide(self.parse()?, metadata),
+            PERF_RECORD_NAMESPACES => visitor.visit_namespaces(self.parse()?, metadata),
+            PERF_RECORD_KSYMBOL => visitor.visit_ksymbol(self.parse()?, metadata),
+            PERF_RECORD_BPF_EVENT => visitor.visit_bpf_event(self.parse()?, metadata),
+            PERF_RECORD_CGROUP => visitor.visit_cgroup(self.parse()?, metadata),
+            PERF_RECORD_TEXT_POKE => visitor.visit_text_poke(self.parse()?, metadata),
+            PERF_RECORD_AUX_OUTPUT_HW_ID => visitor.visit_aux_output_hw_id(self.parse()?, metadata),
+            _ => visitor.visit_unknown(self.parse_rest()?, metadata),
+        })
     }
 
     /// Same as [`parse_record`](Self::parse_record) but required that the
@@ -392,32 +464,19 @@ where
         visitor: V,
         header: bindings::perf_event_header,
     ) -> Result<V::Output> {
-        use perf_event_open_sys::bindings::*;
+        let (mut p, metadata) = self.parse_metadata_with_header_impl(header)?;
 
-        let (mut p, metadata) = self.parse_metadata_with_header(header)?;
-        Ok(match metadata.ty() {
-            PERF_RECORD_MMAP => visitor.visit_mmap(p.parse()?, metadata),
-            PERF_RECORD_LOST => visitor.visit_lost(p.parse()?, metadata),
-            PERF_RECORD_COMM => visitor.visit_comm(p.parse()?, metadata),
-            PERF_RECORD_EXIT => visitor.visit_exit(p.parse()?, metadata),
-            PERF_RECORD_THROTTLE => visitor.visit_throttle(p.parse()?, metadata),
-            PERF_RECORD_UNTHROTTLE => visitor.visit_unthrottle(p.parse()?, metadata),
-            PERF_RECORD_FORK => visitor.visit_fork(p.parse()?, metadata),
-            PERF_RECORD_READ => visitor.visit_read(p.parse()?, metadata),
-            PERF_RECORD_SAMPLE => visitor.visit_sample(p.parse()?, metadata),
-            PERF_RECORD_MMAP2 => visitor.visit_mmap2(p.parse()?, metadata),
-            PERF_RECORD_AUX => visitor.visit_aux(p.parse()?, metadata),
-            PERF_RECORD_ITRACE_START => visitor.visit_itrace_start(p.parse()?, metadata),
-            PERF_RECORD_LOST_SAMPLES => visitor.visit_lost_samples(p.parse()?, metadata),
-            PERF_RECORD_SWITCH_CPU_WIDE => visitor.visit_switch_cpu_wide(p.parse()?, metadata),
-            PERF_RECORD_NAMESPACES => visitor.visit_namespaces(p.parse()?, metadata),
-            PERF_RECORD_KSYMBOL => visitor.visit_ksymbol(p.parse()?, metadata),
-            PERF_RECORD_BPF_EVENT => visitor.visit_bpf_event(p.parse()?, metadata),
-            PERF_RECORD_CGROUP => visitor.visit_cgroup(p.parse()?, metadata),
-            PERF_RECORD_TEXT_POKE => visitor.visit_text_poke(p.parse()?, metadata),
-            PERF_RECORD_AUX_OUTPUT_HW_ID => visitor.visit_aux_output_hw_id(p.parse()?, metadata),
-            _ => visitor.visit_unknown(p.parse_rest()?, metadata),
-        })
+        match p.data.as_slice() {
+            Some(data) => {
+                // Fast path: the data is all in one contiguous borrowed slice so we can
+                //            parse based on that.
+                let mut p = Parser::new(data, p.config().clone());
+                p.parse_record_impl(visitor, metadata)
+            }
+            // Slow path: we have either an unowned slice or multiple slices so the ParseBuf
+            //            implementation needs to do more work to handle that.
+            None => p.parse_record_impl(visitor, metadata),
+        }
     }
 }
 

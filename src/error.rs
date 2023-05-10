@@ -45,10 +45,12 @@ impl ParseError {
     }
 
     /// Get the [`ErrorKind`] of this error.
+    #[inline]
     pub fn kind(&self) -> ErrorKind {
         self.code
     }
 
+    #[inline]
     const fn from_code(code: ErrorKind) -> Self {
         Self { code, source: None }
     }
@@ -58,6 +60,7 @@ impl ParseError {
     }
 
     /// More input was needed before the item could be successfully parsed.
+    #[cold]
     pub fn eof() -> Self {
         Self::from_code(ErrorKind::Eof)
     }

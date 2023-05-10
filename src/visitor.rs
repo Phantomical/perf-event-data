@@ -16,6 +16,7 @@ pub struct RecordMetadata {
 }
 
 impl RecordMetadata {
+    #[inline]
     pub(crate) fn new(header: bindings::perf_event_header, sample_id: SampleId) -> Self {
         Self {
             ty: header.type_,
@@ -25,11 +26,13 @@ impl RecordMetadata {
     }
 
     /// The type of this record, as emitted by the kernel.
+    #[inline]
     pub fn ty(&self) -> u32 {
         self.ty
     }
 
     /// Miscellaneous flags set by the kernel.
+    #[inline]
     pub fn misc(&self) -> MiscFlags {
         self.misc
     }
@@ -41,6 +44,7 @@ impl RecordMetadata {
     /// always have an empty `SampleId`. If you want the `SampleId` fields
     /// to be set then configure the kernel to generate MMAP2 records
     /// instead.
+    #[inline]
     pub fn sample_id(&self) -> &SampleId {
         &self.sample_id
     }

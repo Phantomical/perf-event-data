@@ -34,18 +34,22 @@ pub unsafe trait Endian: Copy + Clone {
 pub struct Native;
 
 unsafe impl Endian for Native {
+    #[inline]
     fn convert_u16(&self, bytes: [u8; 2]) -> u16 {
         u16::from_ne_bytes(bytes)
     }
 
+    #[inline]
     fn convert_u32(&self, bytes: [u8; 4]) -> u32 {
         u32::from_ne_bytes(bytes)
     }
 
+    #[inline]
     fn convert_u64(&self, bytes: [u8; 8]) -> u64 {
         u64::from_ne_bytes(bytes)
     }
 
+    #[inline]
     fn is_native(&self) -> bool {
         true
     }
@@ -56,18 +60,22 @@ unsafe impl Endian for Native {
 pub struct Little;
 
 unsafe impl Endian for Little {
+    #[inline]
     fn convert_u16(&self, bytes: [u8; 2]) -> u16 {
         u16::from_le_bytes(bytes)
     }
 
+    #[inline]
     fn convert_u32(&self, bytes: [u8; 4]) -> u32 {
         u32::from_le_bytes(bytes)
     }
 
+    #[inline]
     fn convert_u64(&self, bytes: [u8; 8]) -> u64 {
         u64::from_le_bytes(bytes)
     }
 
+    #[inline]
     fn is_native(&self) -> bool {
         let bytes = [b'a', b'b'];
 
@@ -80,18 +88,22 @@ unsafe impl Endian for Little {
 pub struct Big;
 
 unsafe impl Endian for Big {
+    #[inline]
     fn convert_u16(&self, bytes: [u8; 2]) -> u16 {
         u16::from_be_bytes(bytes)
     }
 
+    #[inline]
     fn convert_u32(&self, bytes: [u8; 4]) -> u32 {
         u32::from_be_bytes(bytes)
     }
 
+    #[inline]
     fn convert_u64(&self, bytes: [u8; 8]) -> u64 {
         u64::from_be_bytes(bytes)
     }
 
+    #[inline]
     fn is_native(&self) -> bool {
         let bytes = [b'a', b'b'];
 

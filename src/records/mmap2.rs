@@ -40,6 +40,7 @@ impl<'a> Mmap2<'a> {
     }
 
     /// Convert this record to a [`Mmap`] record.
+    #[inline]
     pub fn into_mmap(self) -> Mmap<'a> {
         Mmap {
             pid: self.pid,

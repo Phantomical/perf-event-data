@@ -63,7 +63,7 @@ impl<'a> Mmap<'a> {
         OsStrExt::from_bytes(&self.filename)
     }
 
-    /// Convert all the borrowed data in this `CGroup` into owned data.
+    /// Convert all the borrowed data in this `Mmap` into owned data.
     pub fn into_owned(self) -> Mmap<'static> {
         Mmap {
             filename: self.filename.into_owned().into(),

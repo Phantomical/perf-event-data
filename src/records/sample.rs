@@ -167,8 +167,6 @@ impl<'p> Parse<'p> for Sample<'p> {
         let config = p.config();
         let sty = config.sample_type();
         let branch_hw_index = config.branch_hw_index();
-        let regs_user = config.regs_user();
-        let regs_intr = config.regs_intr();
 
         let id = p.parse_if(sty.contains(SampleFlags::IDENTIFIER))?;
         let ip = p.parse_if(sty.contains(SampleFlags::IP))?;
@@ -202,7 +200,7 @@ impl<'p> Parse<'p> for Sample<'p> {
             .unzip();
         let lbr_hw_index = lbr_hw_index.flatten();
         let regs_user = p.parse_if_with(sty.contains(SampleFlags::REGS_USER), |p| {
-            Registers::parse(p, regs_user)
+            Registers::parse_user(p)
         })?;
         let stack_user = p.parse_if_with(sty.contains(SampleFlags::STACK_USER), |p| {
             let size = p.parse_u64()? as usize;
@@ -227,7 +225,7 @@ impl<'p> Parse<'p> for Sample<'p> {
         let data_src = p.parse_if(sty.contains(SampleFlags::DATA_SRC))?;
         let transaction = p.parse_if(sty.contains(SampleFlags::TRANSACTION))?;
         let regs_intr = p.parse_if_with(sty.contains(SampleFlags::REGS_INTR), |p| {
-            Registers::parse(p, regs_intr)
+            Registers::parse_intr(p)
         })?;
         let phys_addr = p.parse_if(sty.contains(SampleFlags::PHYS_ADDR))?;
         let aux = p.parse_if_with(sty.contains(SampleFlags::AUX), |p| {
@@ -301,6 +299,24 @@ c_enum! {
 }
 
 impl<'p> Registers<'p> {
+    /// Parse registers using the user registers mask in the config.
+    pub fn parse_user<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
+    where
+        E: Endian,
+        B: ParseBuf<'p>,
+    {
+        Self::parse(p, p.config().regs_user())
+    }
+
+    /// Parse registers using the intr registers mask in the config.
+    pub fn parse_intr<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
+    where
+        E: Endian,
+        B: ParseBuf<'p>,
+    {
+        Self::parse(p, p.config().regs_intr())
+    }
+
     fn parse<B, E>(p: &mut Parser<B, E>, mask: u64) -> ParseResult<Self>
     where
         E: Endian,

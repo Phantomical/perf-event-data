@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use crate::error::ParseError;
 use crate::prelude::*;
 use std::borrow::Cow;

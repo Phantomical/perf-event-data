@@ -12,6 +12,7 @@ use crate::prelude::*;
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Clone, Debug)]
+#[allow(missing_docs)]
 pub struct Throttle {
     pub time: u64,
     pub id: u64,

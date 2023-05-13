@@ -163,7 +163,7 @@ impl<'a> Mmap2<'a> {
 }
 
 impl<'p> Parse<'p> for Mmap2<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -183,7 +183,7 @@ impl<'p> Parse<'p> for Mmap2<'p> {
 }
 
 impl<'p> Parse<'p> for MmapDetail {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

@@ -72,7 +72,7 @@ impl<'a> Namespaces<'a> {
 }
 
 impl<'p> Parse<'p> for NamespaceEntry {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -85,7 +85,7 @@ impl<'p> Parse<'p> for NamespaceEntry {
 }
 
 impl<'p> Parse<'p> for Namespaces<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

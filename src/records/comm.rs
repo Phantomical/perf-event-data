@@ -53,7 +53,7 @@ impl<'a> Comm<'a> {
 }
 
 impl<'p> Parse<'p> for Comm<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

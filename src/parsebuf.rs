@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::io::{BufRead, BufReader, Read};
 use std::ops::Deref;
 
-use crate::parse::{ParseError, Parser, Result};
+use crate::parse::{ParseError, ParseResult, Parser};
 
 used_in_docs!(Parser);
 
@@ -94,7 +94,7 @@ pub unsafe trait ParseBuf<'p> {
     /// to use [`ParseBufChunk::Temporary`] vs [`ParseBufChunk::External`].
     ///
     /// [`advance`]: ParseBuf::advance
-    fn chunk(&mut self) -> Result<ParseBufChunk<'_, 'p>>;
+    fn chunk(&mut self) -> ParseResult<ParseBufChunk<'_, 'p>>;
 
     /// Advance this buffer past `count` bytes.
     fn advance(&mut self, count: usize);
@@ -110,7 +110,7 @@ pub unsafe trait ParseBuf<'p> {
 
 unsafe impl<'p> ParseBuf<'p> for &'p [u8] {
     #[inline]
-    fn chunk(&mut self) -> Result<ParseBufChunk<'_, 'p>> {
+    fn chunk(&mut self) -> ParseResult<ParseBufChunk<'_, 'p>> {
         if self.is_empty() {
             return Err(ParseError::eof());
         }
@@ -136,7 +136,7 @@ where
     R: Read,
 {
     #[inline]
-    fn chunk(&mut self) -> Result<ParseBufChunk<'_, 'p>> {
+    fn chunk(&mut self) -> ParseResult<ParseBufChunk<'_, 'p>> {
         let buf = self.fill_buf()?;
 
         if buf.is_empty() {
@@ -159,7 +159,7 @@ pub(crate) struct ParseBufCursor<'p> {
 }
 
 impl<'p> ParseBufCursor<'p> {
-    pub(crate) fn new<B>(buf: &mut B, mut len: usize) -> Result<Self>
+    pub(crate) fn new<B>(buf: &mut B, mut len: usize) -> ParseResult<Self>
     where
         B: ParseBuf<'p>,
     {
@@ -215,7 +215,7 @@ impl<'p> ParseBufCursor<'p> {
 
 unsafe impl<'p> ParseBuf<'p> for ParseBufCursor<'p> {
     #[inline]
-    fn chunk(&mut self) -> Result<ParseBufChunk<'_, 'p>> {
+    fn chunk(&mut self) -> ParseResult<ParseBufChunk<'_, 'p>> {
         match self.chunks.last().ok_or_else(ParseError::eof)? {
             Cow::Borrowed(data) => Ok(ParseBufChunk::External(&data[self.offset..])),
             Cow::Owned(data) => Ok(ParseBufChunk::Temporary(&data[self.offset..])),

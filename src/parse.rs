@@ -22,13 +22,13 @@ use crate::parsebuf::ParseBufCursor;
 use crate::{RecordMetadata, SampleId, Visitor};
 
 pub use crate::config::ParseConfig;
-pub use crate::error::{ErrorKind, ParseError, Result};
+pub use crate::error::{ErrorKind, ParseError, ParseResult};
 pub use crate::parsebuf::{ParseBuf, ParseBufChunk};
 
 /// A type that can be parsed
 pub trait Parse<'p>: Sized {
     /// Parse `Self` using the provided [`Parser`] instance.
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>;
@@ -85,7 +85,7 @@ where
 
     /// Advance the current parser by `offset` and return a new parser for the
     /// data within.
-    fn split_at(&mut self, offset: usize) -> Result<Parser<ParseBufCursor<'p>, E>> {
+    fn split_at(&mut self, offset: usize) -> ParseResult<Parser<ParseBufCursor<'p>, E>> {
         let cursor = ParseBufCursor::new(&mut self.data, offset)?;
         Ok(Parser::new(cursor, self.config().clone()))
     }
@@ -111,7 +111,7 @@ where
         self.data.remaining_hint().unwrap_or(DEFAULT_LEN) / size
     }
 
-    fn parse_bytes_direct(&mut self, len: usize) -> Result<Option<&'p [u8]>> {
+    fn parse_bytes_direct(&mut self, len: usize) -> ParseResult<Option<&'p [u8]>> {
         let chunk = match self.data.chunk()? {
             ParseBufChunk::External(chunk) => chunk,
             _ => return Ok(None),
@@ -127,7 +127,7 @@ where
 
     /// Safe implementation for when we cannot preallocate the buffer.
     #[cold]
-    fn parse_bytes_slow(&mut self, mut len: usize) -> Result<Vec<u8>> {
+    fn parse_bytes_slow(&mut self, mut len: usize) -> ParseResult<Vec<u8>> {
         let mut bytes = Vec::with_capacity(self.safe_capacity_bound::<u8>().min(len));
 
         while len > 0 {
@@ -144,7 +144,7 @@ where
     }
 
     /// Directly get a reference to the next `len` bytes in the input buffer.
-    pub fn parse_bytes(&mut self, len: usize) -> Result<Cow<'p, [u8]>> {
+    pub fn parse_bytes(&mut self, len: usize) -> ParseResult<Cow<'p, [u8]>> {
         if let Some(bytes) = self.parse_bytes_direct(len)? {
             return Ok(Cow::Borrowed(bytes));
         }
@@ -162,7 +162,7 @@ where
 
     /// Parse a slice in its entirety. If this returns successfully then the
     /// entire slice has been initialized.
-    fn parse_to_slice(&mut self, slice: &mut [MaybeUninit<u8>]) -> Result<()> {
+    fn parse_to_slice(&mut self, slice: &mut [MaybeUninit<u8>]) -> ParseResult<()> {
         let mut dst = slice.as_mut_ptr() as *mut u8;
         let mut len = slice.len();
 
@@ -183,13 +183,13 @@ where
     }
 
     #[cold]
-    fn parse_array_slow<const N: usize>(&mut self) -> Result<[u8; N]> {
+    fn parse_array_slow<const N: usize>(&mut self) -> ParseResult<[u8; N]> {
         let mut array = [0u8; N];
         self.parse_to_slice(unsafe { array.align_to_mut().1 })?;
         Ok(array)
     }
 
-    pub(crate) fn parse_array<const N: usize>(&mut self) -> Result<[u8; N]> {
+    pub(crate) fn parse_array<const N: usize>(&mut self) -> ParseResult<[u8; N]> {
         let chunk = self.data.chunk()?;
 
         if chunk.len() < N {
@@ -205,27 +205,27 @@ where
     /// Parse a type.
     ///
     /// If the type fails to parse then this parser will not be modified.
-    pub fn parse<P: Parse<'p>>(&mut self) -> Result<P> {
+    pub fn parse<P: Parse<'p>>(&mut self) -> ParseResult<P> {
         P::parse(self)
     }
 
     /// Parse with an explicit parsing function.
-    pub fn parse_with<F, R>(&mut self, func: F) -> Result<R>
+    pub fn parse_with<F, R>(&mut self, func: F) -> ParseResult<R>
     where
-        F: FnOnce(&mut Self) -> Result<R>,
+        F: FnOnce(&mut Self) -> ParseResult<R>,
     {
         func(self)
     }
 
     /// Parse a type only if `parse` is true.
-    pub fn parse_if<P: Parse<'p>>(&mut self, parse: bool) -> Result<Option<P>> {
+    pub fn parse_if<P: Parse<'p>>(&mut self, parse: bool) -> ParseResult<Option<P>> {
         self.parse_if_with(parse, P::parse)
     }
 
     /// `parse_if` but using an explicit parsing function.
-    pub fn parse_if_with<F, R>(&mut self, parse: bool, func: F) -> Result<Option<R>>
+    pub fn parse_if_with<F, R>(&mut self, parse: bool, func: F) -> ParseResult<Option<R>>
     where
-        F: FnOnce(&mut Self) -> Result<R>,
+        F: FnOnce(&mut Self) -> ParseResult<R>,
     {
         match parse {
             true => self.parse_with(func).map(Some),
@@ -234,31 +234,31 @@ where
     }
 
     /// Parse a single byte out of the source buffer.
-    pub fn parse_u8(&mut self) -> Result<u8> {
+    pub fn parse_u8(&mut self) -> ParseResult<u8> {
         let [byte] = self.parse_array()?;
         Ok(byte)
     }
 
     /// Parse a `u16` out of the source data.
-    pub fn parse_u16(&mut self) -> Result<u16> {
+    pub fn parse_u16(&mut self) -> ParseResult<u16> {
         let array = self.parse_array()?;
         Ok(self.endian().convert_u16(array))
     }
 
     /// Parse a `u32` out of the source data.
-    pub fn parse_u32(&mut self) -> Result<u32> {
+    pub fn parse_u32(&mut self) -> ParseResult<u32> {
         let array = self.parse_array()?;
         Ok(self.endian().convert_u32(array))
     }
 
     /// Parse a `u64` out of the source data.
-    pub fn parse_u64(&mut self) -> Result<u64> {
+    pub fn parse_u64(&mut self) -> ParseResult<u64> {
         let array = self.parse_array()?;
         Ok(self.endian().convert_u64(array))
     }
 
     /// Consume the rest of the buffer and return it as a slice.
-    pub fn parse_rest(&mut self) -> Result<Cow<'p, [u8]>> {
+    pub fn parse_rest(&mut self) -> ParseResult<Cow<'p, [u8]>> {
         let mut bytes = self.data.chunk()?.to_cow();
         self.data.advance(bytes.len());
 
@@ -279,7 +279,7 @@ where
     }
 
     /// Parse the rest of the bytes in the buffer but trim trailing nul bytes.
-    pub fn parse_rest_trim_nul(&mut self) -> Result<Cow<'p, [u8]>> {
+    pub fn parse_rest_trim_nul(&mut self) -> ParseResult<Cow<'p, [u8]>> {
         let mut bytes = self.parse_rest()?;
 
         // Trim padding nul bytes from the entry.
@@ -308,7 +308,7 @@ where
     /// # Safety
     /// It must be valid to transmute `T` directly from bytes. The `Copy` bound
     /// is a step towards ensuring this.
-    pub unsafe fn parse_slice_direct<T>(&mut self, len: usize) -> Result<Option<&'p [T]>>
+    pub unsafe fn parse_slice_direct<T>(&mut self, len: usize) -> ParseResult<Option<&'p [T]>>
     where
         T: Copy,
     {
@@ -344,7 +344,7 @@ where
     /// This has all the same safety preconditions as
     /// [`parse_slice_direct`](Self::parse_slice_direct). That is, is must be
     /// valid to transmute bytes in to a `T` instance.
-    pub unsafe fn parse_slice<T>(&mut self, len: usize) -> Result<Cow<'p, [T]>>
+    pub unsafe fn parse_slice<T>(&mut self, len: usize) -> ParseResult<Cow<'p, [T]>>
     where
         T: Parse<'p> + Copy,
     {
@@ -355,7 +355,7 @@ where
     }
 
     /// Parse a sequence of `len` `T`s.
-    pub fn parse_repeated<T: Parse<'p>>(&mut self, len: usize) -> Result<Vec<T>> {
+    pub fn parse_repeated<T: Parse<'p>>(&mut self, len: usize) -> ParseResult<Vec<T>> {
         let mut vec = Vec::with_capacity(len.min(self.safe_capacity_bound::<T>()));
         for _ in 0..len {
             vec.push(self.parse()?);
@@ -369,7 +369,9 @@ where
     /// If you have already read the record header, use
     /// [`parse_metadata_with_header`](Parser::parse_metadata_with_header)
     /// instead.
-    pub fn parse_metadata(&mut self) -> Result<(Parser<impl ParseBuf<'p>, E>, RecordMetadata)> {
+    pub fn parse_metadata(
+        &mut self,
+    ) -> ParseResult<(Parser<impl ParseBuf<'p>, E>, RecordMetadata)> {
         let header = self.parse()?;
         self.parse_metadata_with_header(header)
     }
@@ -377,7 +379,7 @@ where
     fn parse_metadata_with_header_impl(
         &mut self,
         header: bindings::perf_event_header,
-    ) -> Result<(Parser<ParseBufCursor<'p>, E>, RecordMetadata)> {
+    ) -> ParseResult<(Parser<ParseBufCursor<'p>, E>, RecordMetadata)> {
         use perf_event_open_sys::bindings::*;
         use std::mem;
 
@@ -415,12 +417,12 @@ where
     pub fn parse_metadata_with_header(
         &mut self,
         header: bindings::perf_event_header,
-    ) -> Result<(Parser<impl ParseBuf<'p>, E>, RecordMetadata)> {
+    ) -> ParseResult<(Parser<impl ParseBuf<'p>, E>, RecordMetadata)> {
         self.parse_metadata_with_header_impl(header)
     }
 
     /// Parse a record, the record types will be visited by the `visitor`.
-    pub fn parse_record<V: Visitor<'p>>(&mut self, visitor: V) -> Result<V::Output> {
+    pub fn parse_record<V: Visitor<'p>>(&mut self, visitor: V) -> ParseResult<V::Output> {
         let header = self.parse()?;
         self.parse_record_with_header(visitor, header)
     }
@@ -429,7 +431,7 @@ where
         self,
         visitor: V,
         metadata: RecordMetadata,
-    ) -> Result<V::Output> {
+    ) -> ParseResult<V::Output> {
         use perf_event_open_sys::bindings::*;
 
         let mut p = Parser::new(self.data, self.config.with_misc(metadata.misc()));
@@ -465,7 +467,7 @@ where
         &mut self,
         visitor: V,
         header: bindings::perf_event_header,
-    ) -> Result<V::Output> {
+    ) -> ParseResult<V::Output> {
         let (p, metadata) = self.parse_metadata_with_header_impl(header)?;
 
         match p.data.as_slice() {
@@ -483,7 +485,7 @@ where
 }
 
 impl<'p> Parse<'p> for u8 {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -493,7 +495,7 @@ impl<'p> Parse<'p> for u8 {
 }
 
 impl<'p> Parse<'p> for u16 {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -503,7 +505,7 @@ impl<'p> Parse<'p> for u16 {
 }
 
 impl<'p> Parse<'p> for u32 {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -513,7 +515,7 @@ impl<'p> Parse<'p> for u32 {
 }
 
 impl<'p> Parse<'p> for u64 {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -523,7 +525,7 @@ impl<'p> Parse<'p> for u64 {
 }
 
 impl<'p, const N: usize> Parse<'p> for [u8; N] {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -533,7 +535,7 @@ impl<'p, const N: usize> Parse<'p> for [u8; N] {
 }
 
 impl<'p> Parse<'p> for bindings::perf_event_header {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

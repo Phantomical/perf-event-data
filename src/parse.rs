@@ -426,13 +426,13 @@ where
     }
 
     fn parse_record_impl<V: Visitor<'p>>(
-        &mut self,
+        self,
         visitor: V,
         metadata: RecordMetadata,
     ) -> Result<V::Output> {
         use perf_event_open_sys::bindings::*;
 
-        let mut p = Parser::new(self.data, self.config().clone().with_misc(metadata.misc()));
+        let mut p = Parser::new(self.data, self.config.with_misc(metadata.misc()));
 
         Ok(match metadata.ty() {
             PERF_RECORD_MMAP => visitor.visit_mmap(p.parse()?, metadata),
@@ -466,13 +466,13 @@ where
         visitor: V,
         header: bindings::perf_event_header,
     ) -> Result<V::Output> {
-        let (mut p, metadata) = self.parse_metadata_with_header_impl(header)?;
+        let (p, metadata) = self.parse_metadata_with_header_impl(header)?;
 
         match p.data.as_slice() {
             Some(data) => {
                 // Fast path: the data is all in one contiguous borrowed slice so we can
                 //            parse based on that.
-                let mut p = Parser::new(data, p.config().clone());
+                let p = Parser::new(data, p.config);
                 p.parse_record_impl(visitor, metadata)
             }
             // Slow path: we have either an unowned slice or multiple slices so the ParseBuf

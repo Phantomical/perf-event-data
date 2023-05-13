@@ -97,6 +97,7 @@ macro_rules! c_enum {
         }
 
         impl $name {
+            #[doc = concat!("Create a new `", stringify!($name), "` from a `", stringify!($inner), "`.")]
             pub const fn new(value: $inner) -> Self {
                 Self(value)
             }

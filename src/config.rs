@@ -100,7 +100,7 @@ impl From<perf_event_attr> for RawParseConfig {
             sample_regs_intr: attrs.sample_regs_intr,
             branch_hw_index: (attrs.branch_sample_type & PERF_SAMPLE_BRANCH_HW_INDEX as u64) != 0,
             sample_id_all: attrs.sample_id_all() != 0,
-            misc: 0
+            misc: 0,
         }
     }
 }

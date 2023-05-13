@@ -32,7 +32,10 @@ pub struct Namespaces<'a> {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct NamespaceEntry {
+    /// The device ID.
     pub dev: u64,
+
+    /// The inode number.
     pub inode: u64,
 }
 

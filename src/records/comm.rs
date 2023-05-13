@@ -1,5 +1,8 @@
 use crate::prelude::*;
 use std::borrow::Cow;
+use std::ffi::OsStr;
+
+used_in_docs!(OsStr);
 
 /// COMM records indicate changes in process names.
 ///
@@ -19,19 +22,28 @@ use std::borrow::Cow;
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Clone, Debug)]
 pub struct Comm<'a> {
+    /// The process ID.
     pub pid: u32,
+
+    /// The thread ID.
     pub tid: u32,
+
+    /// The new name of the process.
+    ///
+    /// If on unix systems you can use `comm_os` to get this as an [`OsStr`].
     pub comm: Cow<'a, [u8]>,
 }
 
 impl<'a> Comm<'a> {
+    /// The new name of the process, as an [`OsStr`].
     #[cfg(unix)]
-    pub fn comm_os(&self) -> &std::ffi::OsStr {
+    pub fn comm_os(&self) -> &OsStr {
         use std::os::unix::ffi::OsStrExt;
 
         OsStrExt::from_bytes(&self.comm)
     }
 
+    /// Convert all the borrowed data in this `Comm` into owned data.
     pub fn into_owned(self) -> Comm<'static> {
         Comm {
             comm: self.comm.into_owned().into(),

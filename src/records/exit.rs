@@ -7,6 +7,7 @@ use crate::prelude::*;
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Clone, Debug)]
+#[allow(missing_docs)]
 pub struct Exit {
     pub pid: u32,
     pub ppid: u32,

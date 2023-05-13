@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use crate::error::ParseError;
 use crate::prelude::*;
 use std::borrow::Cow;
@@ -14,12 +16,17 @@ use std::iter::FusedIterator;
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Clone, Debug)]
 pub struct Read<'a> {
+    /// The process ID.
     pub pid: u32,
+
+    /// The thread ID.
     pub tid: u32,
+
     pub values: ReadData<'a>,
 }
 
 impl<'a> Read<'a> {
+    /// Convert all the borrowed data in this `Read` into owned data.
     pub fn into_owned(self) -> Read<'static> {
         Read {
             values: self.values.into_owned(),
@@ -30,7 +37,13 @@ impl<'a> Read<'a> {
 
 #[derive(Clone, Debug)]
 pub enum ReadData<'a> {
+    /// Data for only a single counter.
+    ///
+    /// This is what will be generated if the [`ParseConfig`]'s `read_format`
+    /// did not contain `READ_FORMAT_GROUP`.
     Single(SingleRead),
+
+    /// Data for all counters in a group.
     Group(GroupRead<'a>),
 }
 

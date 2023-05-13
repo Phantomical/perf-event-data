@@ -77,7 +77,8 @@ macro_rules! used_in_docs {
 /// ```
 macro_rules! c_enum {
     {
-        $( #[ $attr:meta ] )*
+        $( #[doc = $doc:expr] )*
+        $( #[allow($warning:ident)] )*
         $vis:vis struct $name:ident : $inner:ty {
             $(
                 $( #[ $field_attr:meta ] )*
@@ -85,10 +86,12 @@ macro_rules! c_enum {
             )*
         }
     } => {
-        $( #[$attr] )*
+        $( #[doc = $doc] )*
+        $( #[allow($warning)] )*
         #[derive(Copy, Clone, Eq, PartialEq, Hash)]
         $vis struct $name(pub $inner);
 
+        $( #[allow($warning)] )*
         impl $name {
             $(
                 $( #[$field_attr] )*
@@ -97,6 +100,7 @@ macro_rules! c_enum {
         }
 
         impl $name {
+            #[doc = concat!("Create a new `", stringify!($name), "` from a `", stringify!($inner), "`.")]
             pub const fn new(value: $inner) -> Self {
                 Self(value)
             }

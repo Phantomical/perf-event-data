@@ -46,6 +46,7 @@ bitflags! {
 
 c_enum! {
     /// PMU-specific trace format type
+    #[allow(missing_docs)]
     pub struct AuxPmuFormatType : u8 {
         const CORESIGHT = (bindings::PERF_AUX_FLAG_CORESIGHT_FORMAT_CORESIGHT >> 8) as _;
         const CORESIGHT_RAW = (bindings::PERF_AUX_FLAG_CORESIGHT_FORMAT_RAW >> 8) as _;

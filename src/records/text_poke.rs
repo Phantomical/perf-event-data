@@ -21,6 +21,7 @@ pub struct TextPoke<'a> {
 }
 
 impl<'a> TextPoke<'a> {
+    /// Convert all the borrowed data in this `TextPoke` into owned data.
     pub fn to_owned(self) -> TextPoke<'static> {
         TextPoke {
             old_bytes: self.old_bytes.into_owned().into(),

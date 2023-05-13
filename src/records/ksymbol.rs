@@ -23,6 +23,7 @@ pub struct KSymbol<'a> {
 }
 
 impl<'a> KSymbol<'a> {
+    /// Convert all borrowed data in this `KSymbol` into owned data.
     pub fn into_owned(self) -> KSymbol<'static> {
         KSymbol {
             name: self.name.into_owned().into(),
@@ -34,8 +35,17 @@ impl<'a> KSymbol<'a> {
 c_enum! {
     /// The type of the kernel symbol.
     pub struct KSymbolType : u16 {
+        /// The symbol is of an unknown type.
         const UNKNOWN = bindings::PERF_RECORD_KSYMBOL_TYPE_UNKNOWN as _;
+
+        /// The symbol is a BPF function.
         const BPF = bindings::PERF_RECORD_KSYMBOL_TYPE_BPF as _;
+
+        /// The symbol is out-of-line code.
+        ///
+        /// See the [kernel source][src] for examples of when this could occur.
+        ///
+        /// [src]: https://sourcegraph.com/github.com/torvalds/linux@d4d58949a6eac1c45ab022562c8494725e1ac094/-/blob/tools/include/uapi/linux/perf_event.h?L1220
         const OOL = bindings::PERF_RECORD_KSYMBOL_TYPE_OOL as _;
     }
 }

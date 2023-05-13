@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use std::borrow::Cow;
 use std::fmt;
 
@@ -48,9 +50,16 @@ mod sample_impl {
     }
 }
 
+/// A sample emitted by the kernel.
+///
+/// See the [manpage] for documentation on what each of the individual fields
+/// mean.
+///
+/// [manpage]: https://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Clone)]
 pub struct Sample<'a>(sample_impl::Sample<'a>);
 
+#[allow(missing_docs)]
 impl<'a> Sample<'a> {
     pub fn id(&self) -> Option<u64> {
         self.0.id().copied()
@@ -474,6 +483,12 @@ impl DataSource {
         MemBlk::from_bits_retain(self.bitfield().mem_blk())
     }
 
+    /// The number of hops that were required to perform this memory access.
+    ///
+    /// This field is not document in the [man page] but is present within the
+    /// kernel headers.
+    ///
+    /// [man page]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
     pub fn mem_hops(&self) -> u8 {
         self.bitfield().mem_hops() as _
     }
@@ -586,25 +601,30 @@ bitflags! {
     /// This is used by [`DataSource`].
     #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Default)]
     pub struct MemSnoop : u64 {
-        const NA = bindings::PERF_MEM_SNOOP_NA as _;
-        const NONE = bindings::PERF_MEM_SNOOP_NONE as _;
-        const HIT = bindings::PERF_MEM_SNOOP_HIT as _;
-        const MISS = bindings::PERF_MEM_SNOOP_MISS as _;
-        const HITM = bindings::PERF_MEM_SNOOP_HITM as _;
+        const NA   = (bindings::PERF_MEM_SNOOP_NA   as u64) << bindings::PERF_MEM_SNOOP_SHIFT;
+        const NONE = (bindings::PERF_MEM_SNOOP_NONE as u64) << bindings::PERF_MEM_SNOOP_SHIFT;
+        const HIT  = (bindings::PERF_MEM_SNOOP_HIT  as u64) << bindings::PERF_MEM_SNOOP_SHIFT;
+        const MISS = (bindings::PERF_MEM_SNOOP_MISS as u64) << bindings::PERF_MEM_SNOOP_SHIFT;
+        const HITM = (bindings::PERF_MEM_SNOOP_HITM as u64) << bindings::PERF_MEM_SNOOP_SHIFT;
 
-        const FWD = (bindings::PERF_MEM_SNOOPX_FWD as u64) << Self::SNOOPX_SHIFT;
-        const PEER = (bindings::PERF_MEM_SNOOPX_PEER as u64) << Self::SNOOPX_SHIFT;
+        const FWD  = (bindings::PERF_MEM_SNOOPX_FWD  as u64) << bindings::PERF_MEM_SNOOPX_SHIFT;
+        const PEER = (bindings::PERF_MEM_SNOOPX_PEER as u64) << bindings::PERF_MEM_SNOOPX_SHIFT;
     }
 }
 
 impl MemSnoop {
-    pub fn new(mem_snoop: u64, mem_snoopx: u64) -> Self {
+    pub fn new(mut mem_snoop: u64, mut mem_snoopx: u64) -> Self {
+        mem_snoop &= Self::SNOOP_MASK;
+        mem_snoopx &= Self::SNOOPX_MASK;
+
         Self::from_bits_truncate(
-            (mem_snoop & ((1 << Self::SNOOPX_SHIFT) - 1)) | (mem_snoopx << Self::SNOOPX_SHIFT),
+            (mem_snoop << bindings::PERF_MEM_SNOOP_SHIFT)
+                | (mem_snoopx << bindings::PERF_MEM_SNOOPX_SHIFT),
         )
     }
 
-    const SNOOPX_SHIFT: u64 = 5;
+    const SNOOP_MASK: u64 = 0b11111;
+    const SNOOPX_MASK: u64 = 0b11;
 }
 
 bitflags! {

@@ -8,6 +8,7 @@ use perf_event_open_sys::bindings;
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Copy, Clone, Debug)]
+#[allow(missing_docs)]
 pub struct BpfEvent {
     pub ty: BpfEventType,
     pub flags: u16,
@@ -18,6 +19,7 @@ pub struct BpfEvent {
 c_enum! {
     /// Indicates the type of a [`BpfEvent`]
     pub struct BpfEventType : u16 {
+        /// The event type is unknown.
         const UNKNOWN = bindings::PERF_BPF_EVENT_UNKNOWN as _;
 
         /// A BPF program was loaded.

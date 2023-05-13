@@ -1,6 +1,6 @@
 //! Rust structs for records emitted by `perf` and `perf_event_open`.
 
-// #![warn(missing_docs)]
+#![warn(missing_docs)]
 
 // Needs to be first so other modules can see the macros.
 #[macro_use]

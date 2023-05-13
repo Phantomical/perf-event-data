@@ -2,8 +2,6 @@
 //!
 //! This is mostly to separate them from the support code of this crate.
 
-#![allow(missing_docs)]
-
 mod aux;
 mod aux_output_hw_id;
 mod bpf_event;

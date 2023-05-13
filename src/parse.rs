@@ -432,28 +432,30 @@ where
     ) -> Result<V::Output> {
         use perf_event_open_sys::bindings::*;
 
+        let mut p = Parser::new(self.data, self.config().clone().with_misc(metadata.misc()));
+
         Ok(match metadata.ty() {
-            PERF_RECORD_MMAP => visitor.visit_mmap(self.parse()?, metadata),
-            PERF_RECORD_LOST => visitor.visit_lost(self.parse()?, metadata),
-            PERF_RECORD_COMM => visitor.visit_comm(self.parse()?, metadata),
-            PERF_RECORD_EXIT => visitor.visit_exit(self.parse()?, metadata),
-            PERF_RECORD_THROTTLE => visitor.visit_throttle(self.parse()?, metadata),
-            PERF_RECORD_UNTHROTTLE => visitor.visit_unthrottle(self.parse()?, metadata),
-            PERF_RECORD_FORK => visitor.visit_fork(self.parse()?, metadata),
-            PERF_RECORD_READ => visitor.visit_read(self.parse()?, metadata),
-            PERF_RECORD_SAMPLE => visitor.visit_sample(self.parse()?, metadata),
-            PERF_RECORD_MMAP2 => visitor.visit_mmap2(self.parse()?, metadata),
-            PERF_RECORD_AUX => visitor.visit_aux(self.parse()?, metadata),
-            PERF_RECORD_ITRACE_START => visitor.visit_itrace_start(self.parse()?, metadata),
-            PERF_RECORD_LOST_SAMPLES => visitor.visit_lost_samples(self.parse()?, metadata),
-            PERF_RECORD_SWITCH_CPU_WIDE => visitor.visit_switch_cpu_wide(self.parse()?, metadata),
-            PERF_RECORD_NAMESPACES => visitor.visit_namespaces(self.parse()?, metadata),
-            PERF_RECORD_KSYMBOL => visitor.visit_ksymbol(self.parse()?, metadata),
-            PERF_RECORD_BPF_EVENT => visitor.visit_bpf_event(self.parse()?, metadata),
-            PERF_RECORD_CGROUP => visitor.visit_cgroup(self.parse()?, metadata),
-            PERF_RECORD_TEXT_POKE => visitor.visit_text_poke(self.parse()?, metadata),
-            PERF_RECORD_AUX_OUTPUT_HW_ID => visitor.visit_aux_output_hw_id(self.parse()?, metadata),
-            _ => visitor.visit_unknown(self.parse_rest()?, metadata),
+            PERF_RECORD_MMAP => visitor.visit_mmap(p.parse()?, metadata),
+            PERF_RECORD_LOST => visitor.visit_lost(p.parse()?, metadata),
+            PERF_RECORD_COMM => visitor.visit_comm(p.parse()?, metadata),
+            PERF_RECORD_EXIT => visitor.visit_exit(p.parse()?, metadata),
+            PERF_RECORD_THROTTLE => visitor.visit_throttle(p.parse()?, metadata),
+            PERF_RECORD_UNTHROTTLE => visitor.visit_unthrottle(p.parse()?, metadata),
+            PERF_RECORD_FORK => visitor.visit_fork(p.parse()?, metadata),
+            PERF_RECORD_READ => visitor.visit_read(p.parse()?, metadata),
+            PERF_RECORD_SAMPLE => visitor.visit_sample(p.parse()?, metadata),
+            PERF_RECORD_MMAP2 => visitor.visit_mmap2(p.parse()?, metadata),
+            PERF_RECORD_AUX => visitor.visit_aux(p.parse()?, metadata),
+            PERF_RECORD_ITRACE_START => visitor.visit_itrace_start(p.parse()?, metadata),
+            PERF_RECORD_LOST_SAMPLES => visitor.visit_lost_samples(p.parse()?, metadata),
+            PERF_RECORD_SWITCH_CPU_WIDE => visitor.visit_switch_cpu_wide(p.parse()?, metadata),
+            PERF_RECORD_NAMESPACES => visitor.visit_namespaces(p.parse()?, metadata),
+            PERF_RECORD_KSYMBOL => visitor.visit_ksymbol(p.parse()?, metadata),
+            PERF_RECORD_BPF_EVENT => visitor.visit_bpf_event(p.parse()?, metadata),
+            PERF_RECORD_CGROUP => visitor.visit_cgroup(p.parse()?, metadata),
+            PERF_RECORD_TEXT_POKE => visitor.visit_text_poke(p.parse()?, metadata),
+            PERF_RECORD_AUX_OUTPUT_HW_ID => visitor.visit_aux_output_hw_id(p.parse()?, metadata),
+            _ => visitor.visit_unknown(p.parse_rest()?, metadata),
         })
     }
 

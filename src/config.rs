@@ -12,6 +12,7 @@ pub(crate) struct RawParseConfig {
     sample_regs_intr: u64,
     sample_id_all: bool,
     branch_hw_index: bool,
+    misc: u16,
 }
 
 /// All the configuration data needed to parse any perf record.
@@ -34,6 +35,11 @@ impl<E> ParseConfig<E> {
     /// Used for testing, please open an issue if you need this.
     pub(crate) fn with_sample_type(mut self, sample_type: SampleFlags) -> Self {
         self.config.sample_type = sample_type;
+        self
+    }
+
+    pub(crate) fn with_misc(mut self, misc: u16) -> Self {
+        self.config.misc = misc;
         self
     }
 }
@@ -75,6 +81,10 @@ impl<E: Endian> ParseConfig<E> {
         self.config.branch_hw_index
     }
 
+    pub(crate) fn misc(&self) -> u16 {
+        self.config.misc
+    }
+
     /// The [`Endian`] for this `ParseConfig`.
     pub fn endian(&self) -> &E {
         &self.endian
@@ -90,6 +100,7 @@ impl From<perf_event_attr> for RawParseConfig {
             sample_regs_intr: attrs.sample_regs_intr,
             branch_hw_index: (attrs.branch_sample_type & PERF_SAMPLE_BRANCH_HW_INDEX as u64) != 0,
             sample_id_all: attrs.sample_id_all() != 0,
+            misc: 0
         }
     }
 }

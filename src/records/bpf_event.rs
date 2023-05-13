@@ -19,6 +19,7 @@ pub struct BpfEvent {
 c_enum! {
     /// Indicates the type of a [`BpfEvent`]
     pub struct BpfEventType : u16 {
+        /// The event type is unknown.
         const UNKNOWN = bindings::PERF_BPF_EVENT_UNKNOWN as _;
 
         /// A BPF program was loaded.

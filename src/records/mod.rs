@@ -21,6 +21,8 @@ mod switch_cpu_wide;
 mod text_poke;
 mod throttle;
 
+use perf_event_open_sys::bindings::perf_event_header;
+
 pub use self::aux::*;
 pub use self::aux_output_hw_id::*;
 pub use self::bpf_event::*;
@@ -63,6 +65,7 @@ mod sample_id {
     }
 }
 
+use std::borrow::Cow;
 use std::fmt;
 
 use crate::prelude::*;
@@ -165,5 +168,228 @@ impl<'p> Parse<'p> for SampleId {
 impl fmt::Debug for SampleId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
+    }
+}
+
+/// A record emitted by the linux kernel.
+///
+/// This enum contains every supported record type emitted by the kernel.
+/// Depending on how the perf event counter was configured only a few of these
+/// will be emitted by any one counter.
+#[derive(Clone, Debug)]
+#[non_exhaustive]
+#[allow(missing_docs)]
+pub enum Record<'a> {
+    Mmap(Mmap<'a>),
+    Lost(Lost),
+    Comm(Comm<'a>),
+    Exit(Exit),
+    Throttle(Throttle),
+    Unthrottle(Throttle),
+    Fork(Fork),
+    Read(Read<'a>),
+    Sample(Box<Sample<'a>>),
+    Mmap2(Mmap2<'a>),
+    Aux(Aux),
+    ITraceStart(ITraceStart),
+    LostSamples(LostSamples),
+    Switch,
+    SwitchCpuWide(SwitchCpuWide),
+    Namespaces(Namespaces<'a>),
+    KSymbol(KSymbol<'a>),
+    BpfEvent(BpfEvent),
+    CGroup(CGroup<'a>),
+    TextPoke(TextPoke<'a>),
+    AuxOutputHwId(AuxOutputHwId),
+
+    /// A record type that is unknown to this crate.
+    ///
+    /// Note that just because a record is parsed as unknown in one release of
+    /// this crate does not mean it will continue to be parsed in future
+    /// releases. Adding a new variant to this enum is not considered to be a
+    /// breaking change.
+    ///
+    /// If you find yourself using the unknown variant to parse valid records
+    /// emitted by the kernel please file an issue or create a PR to add support
+    /// for them.
+    Unknown {
+        ty: u32,
+        data: Cow<'a, [u8]>,
+    },
+}
+
+macro_rules! record_from {
+    ($ty:ident) => {
+        impl<'a> From<$ty> for Record<'a> {
+            fn from(value: $ty) -> Self {
+                Self::$ty(value)
+            }
+        }
+    };
+    ($ty:ident<$lt:lifetime>) => {
+        impl<$lt> From<$ty<$lt>> for Record<$lt> {
+            fn from(value: $ty<$lt>) -> Self {
+                Self::$ty(value)
+            }
+        }
+    };
+}
+
+record_from!(Mmap<'a>);
+record_from!(Lost);
+record_from!(Comm<'a>);
+// These are both the same struct
+// record_from!(Exit);
+// record_from!(Fork);
+record_from!(Read<'a>);
+record_from!(Mmap2<'a>);
+record_from!(Aux);
+record_from!(ITraceStart);
+record_from!(LostSamples);
+record_from!(SwitchCpuWide);
+record_from!(Namespaces<'a>);
+record_from!(KSymbol<'a>);
+record_from!(BpfEvent);
+record_from!(CGroup<'a>);
+record_from!(TextPoke<'a>);
+record_from!(AuxOutputHwId);
+
+impl<'a> From<Sample<'a>> for Record<'a> {
+    fn from(value: Sample<'a>) -> Self {
+        Self::Sample(Box::new(value))
+    }
+}
+
+struct RecordVisitor;
+
+impl<'a> crate::Visitor<'a> for RecordVisitor {
+    type Output = Record<'a>;
+
+    fn visit_unimplemented(self, metadata: crate::RecordMetadata) -> Self::Output {
+        panic!(
+            "parsing for records of type {} is not implemented",
+            metadata.ty()
+        );
+    }
+
+    fn visit_mmap(self, record: Mmap<'a>, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_lost(self, record: Lost, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_comm(self, record: Comm<'a>, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_exit(self, record: Exit, _: crate::RecordMetadata) -> Self::Output {
+        Record::Exit(record)
+    }
+
+    fn visit_throttle(self, record: Throttle, _: crate::RecordMetadata) -> Self::Output {
+        Record::Throttle(record)
+    }
+
+    fn visit_unthrottle(self, record: Throttle, _: crate::RecordMetadata) -> Self::Output {
+        Record::Unthrottle(record)
+    }
+
+    fn visit_fork(self, record: Fork, _: crate::RecordMetadata) -> Self::Output {
+        Record::Fork(record)
+    }
+
+    fn visit_read(self, record: Read<'a>, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_sample(self, record: Sample<'a>, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_mmap2(self, record: Mmap2<'a>, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_aux(self, record: Aux, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_itrace_start(self, record: ITraceStart, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_lost_samples(self, record: LostSamples, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_switch(self, _: crate::RecordMetadata) -> Self::Output {
+        Record::Switch
+    }
+
+    fn visit_switch_cpu_wide(
+        self,
+        record: SwitchCpuWide,
+        _: crate::RecordMetadata,
+    ) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_namespaces(self, record: Namespaces<'a>, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_ksymbol(self, record: KSymbol<'a>, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_bpf_event(self, record: BpfEvent, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_cgroup(self, record: CGroup<'a>, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_text_poke(self, record: TextPoke<'a>, _: crate::RecordMetadata) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_aux_output_hw_id(
+        self,
+        record: AuxOutputHwId,
+        _: crate::RecordMetadata,
+    ) -> Self::Output {
+        record.into()
+    }
+
+    fn visit_unknown(self, data: Cow<'a, [u8]>, metadata: crate::RecordMetadata) -> Self::Output {
+        Record::Unknown {
+            ty: metadata.ty(),
+            data,
+        }
+    }
+}
+
+impl<'p> Record<'p> {
+    /// Parse a `Record` using a [`perf_event_header`] that has already been
+    /// parsed.
+    pub fn parse_with_header<B, E>(p: &mut Parser<B, E>, header: perf_event_header) -> Result<Self>
+    where
+        E: Endian,
+        B: ParseBuf<'p>,
+    {
+        p.parse_record_with_header(RecordVisitor, header)
+    }
+}
+
+impl<'p> Parse<'p> for Record<'p> {
+    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    where
+        E: Endian,
+        B: ParseBuf<'p>,
+    {
+        p.parse_record(RecordVisitor)
     }
 }

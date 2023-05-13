@@ -329,7 +329,7 @@ impl<'a> ExactSizeIterator for GroupIter<'a> {}
 impl<'a> FusedIterator for GroupIter<'a> {}
 
 impl<'p> Parse<'p> for SingleRead {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -370,7 +370,7 @@ impl<'p> Parse<'p> for SingleRead {
 }
 
 impl<'p> Parse<'p> for GroupRead<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -420,7 +420,7 @@ impl<'p> Parse<'p> for GroupRead<'p> {
 }
 
 impl<'p> Parse<'p> for ReadData<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -436,7 +436,7 @@ impl<'p> Parse<'p> for ReadData<'p> {
 }
 
 impl<'p> Parse<'p> for Read<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

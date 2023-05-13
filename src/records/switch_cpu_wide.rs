@@ -30,7 +30,7 @@ pub struct SwitchCpuWide {
 }
 
 impl<'p> Parse<'p> for SwitchCpuWide {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

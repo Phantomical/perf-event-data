@@ -159,7 +159,7 @@ impl<'a> Sample<'a> {
 }
 
 impl<'p> Parse<'p> for Sample<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -301,7 +301,7 @@ c_enum! {
 }
 
 impl<'p> Registers<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>, mask: u64) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>, mask: u64) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -315,7 +315,7 @@ impl<'p> Registers<'p> {
 }
 
 impl<'p> Parse<'p> for SampleRegsAbi {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -398,7 +398,7 @@ impl BranchEntry {
 }
 
 impl<'p> Parse<'p> for BranchEntry {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -511,7 +511,7 @@ impl fmt::Debug for DataSource {
 }
 
 impl<'p> Parse<'p> for DataSource {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -652,7 +652,7 @@ impl Txn {
 }
 
 impl<'p> Parse<'p> for Txn {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

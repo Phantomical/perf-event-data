@@ -19,7 +19,7 @@ pub struct AuxOutputHwId {
 }
 
 impl<'p> Parse<'p> for AuxOutputHwId {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

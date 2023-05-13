@@ -9,7 +9,7 @@ used_in_docs!(Parse, Parser, ParseBuf, ParseConfig);
 type BoxedError = Box<dyn Error + Send + Sync + 'static>;
 
 /// A specialized result type used by [`Parse`] and [`Parser`].
-pub type Result<T> = std::result::Result<T, ParseError>;
+pub type ParseResult<T> = std::result::Result<T, ParseError>;
 
 /// The error type for parsing errors as returned by [`Parser`].
 ///

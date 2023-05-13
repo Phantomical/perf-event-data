@@ -60,7 +60,7 @@ bitflags! {
 }
 
 impl<'p> Parse<'p> for KSymbolType {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -70,7 +70,7 @@ impl<'p> Parse<'p> for KSymbolType {
 }
 
 impl<'p> Parse<'p> for KSymbolFlags {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -80,7 +80,7 @@ impl<'p> Parse<'p> for KSymbolFlags {
 }
 
 impl<'p> Parse<'p> for KSymbol<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

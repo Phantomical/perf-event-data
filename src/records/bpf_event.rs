@@ -31,7 +31,7 @@ c_enum! {
 }
 
 impl<'p> Parse<'p> for BpfEventType {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -41,7 +41,7 @@ impl<'p> Parse<'p> for BpfEventType {
 }
 
 impl<'p> Parse<'p> for BpfEvent {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

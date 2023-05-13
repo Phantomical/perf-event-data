@@ -132,7 +132,7 @@ impl SampleId {
 }
 
 impl<'p> Parse<'p> for SampleId {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -375,7 +375,10 @@ impl<'a> crate::Visitor<'a> for RecordVisitor {
 impl<'p> Record<'p> {
     /// Parse a `Record` using a [`perf_event_header`] that has already been
     /// parsed.
-    pub fn parse_with_header<B, E>(p: &mut Parser<B, E>, header: perf_event_header) -> Result<Self>
+    pub fn parse_with_header<B, E>(
+        p: &mut Parser<B, E>,
+        header: perf_event_header,
+    ) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,
@@ -385,7 +388,7 @@ impl<'p> Record<'p> {
 }
 
 impl<'p> Parse<'p> for Record<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> Result<Self>
+    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
         B: ParseBuf<'p>,

@@ -22,7 +22,7 @@ mod prelude {
     pub(crate) use crate::endian::Endian;
     pub(crate) use crate::error::ErrorKind;
     pub(crate) use crate::flags::{ReadFormat, SampleFlags};
-    pub(crate) use crate::parse::{Parse, ParseBuf, Parser, Result};
+    pub(crate) use crate::parse::{Parse, ParseBuf, ParseResult, Parser};
 }
 
 pub use crate::flags::*;

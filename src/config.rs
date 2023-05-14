@@ -4,7 +4,7 @@ use crate::endian::Endian;
 use crate::{ReadFormat, SampleFlags};
 
 #[derive(Copy, Clone, Debug, Default)]
-#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub(crate) struct RawParseConfig {
     sample_type: SampleFlags,
     read_format: ReadFormat,
@@ -117,7 +117,7 @@ where
     }
 }
 
-#[cfg(feature = "fuzzing")]
+#[cfg(feature = "arbitrary")]
 impl<'a, E: Endian + Default> arbitrary::Arbitrary<'a> for ParseConfig<E> {
     fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<Self> {
         Ok(Self {

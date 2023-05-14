@@ -94,7 +94,7 @@ impl ReadFormat {
     }
 }
 
-#[cfg(feature = "fuzzing")]
+#[cfg(feature = "arbitrary")]
 mod fuzzing {
     use super::*;
 

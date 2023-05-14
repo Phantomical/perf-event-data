@@ -187,7 +187,7 @@ pub enum Record<'a> {
     Throttle(Throttle),
     Unthrottle(Throttle),
     Fork(Fork),
-    Read(Read<'a>),
+    Read(Read),
     Sample(Box<Sample<'a>>),
     Mmap2(Mmap2<'a>),
     Aux(Aux),
@@ -241,7 +241,7 @@ record_from!(Comm<'a>);
 // These are both the same struct
 // record_from!(Exit);
 // record_from!(Fork);
-record_from!(Read<'a>);
+record_from!(Read);
 record_from!(Mmap2<'a>);
 record_from!(Aux);
 record_from!(ITraceStart);
@@ -300,7 +300,7 @@ impl<'a> crate::Visitor<'a> for RecordVisitor {
         Record::Fork(record)
     }
 
-    fn visit_read(self, record: Read<'a>, _: crate::RecordMetadata) -> Self::Output {
+    fn visit_read(self, record: Read, _: crate::RecordMetadata) -> Self::Output {
         record.into()
     }
 

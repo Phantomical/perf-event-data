@@ -1,5 +1,3 @@
-#![allow(missing_docs)]
-
 use crate::error::ParseError;
 use crate::prelude::*;
 use std::borrow::Cow;
@@ -15,68 +13,20 @@ use std::iter::FusedIterator;
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Clone, Debug)]
-pub struct Read<'a> {
+pub struct Read {
     /// The process ID.
     pub pid: u32,
 
     /// The thread ID.
     pub tid: u32,
 
-    pub values: ReadData<'a>,
+    /// The value read from the counter during task switch.
+    pub values: ReadValue,
 }
 
-impl<'a> Read<'a> {
-    /// Convert all the borrowed data in this `Read` into owned data.
-    pub fn into_owned(self) -> Read<'static> {
-        Read {
-            values: self.values.into_owned(),
-            ..self
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum ReadData<'a> {
-    /// Data for only a single counter.
-    ///
-    /// This is what will be generated if the [`ParseConfig`]'s `read_format`
-    /// did not contain `READ_FORMAT_GROUP`.
-    Single(SingleRead),
-
-    /// Data for all counters in a group.
-    Group(GroupRead<'a>),
-}
-
-impl<'a> ReadData<'a> {
-    pub fn into_owned(self) -> ReadData<'static> {
-        match self {
-            Self::Single(data) => ReadData::Single(data),
-            Self::Group(data) => ReadData::Group(data.into_owned()),
-        }
-    }
-
-    /// The duration for which this event was enabled, in nanoseconds.
-    pub fn time_enabled(&self) -> Option<u64> {
-        match self {
-            Self::Single(data) => data.time_enabled(),
-            Self::Group(data) => data.time_enabled(),
-        }
-    }
-
-    /// The duration for which this event was running, in nanoseconds.
-    ///
-    /// This will be less than `time_enabled` if the kernel ended up having to
-    /// multiplex multiple counters on the CPU.
-    pub fn time_running(&self) -> Option<u64> {
-        match self {
-            Self::Single(data) => data.time_running(),
-            Self::Group(data) => data.time_running(),
-        }
-    }
-}
-
+/// Data read from a counter.
 #[derive(Clone)]
-pub struct SingleRead {
+pub struct ReadValue {
     read_format: ReadFormat,
     value: u64,
     time_enabled: u64,
@@ -85,7 +35,7 @@ pub struct SingleRead {
     lost: u64,
 }
 
-impl SingleRead {
+impl ReadValue {
     /// The value of the counter.
     pub fn value(&self) -> u64 {
         self.value
@@ -121,7 +71,29 @@ impl SingleRead {
     }
 }
 
-impl fmt::Debug for SingleRead {
+impl TryFrom<ReadGroup<'_>> for ReadValue {
+    type Error = TryFromGroupError;
+
+    fn try_from(value: ReadGroup<'_>) -> Result<Self, Self::Error> {
+        let mut entries = value.entries();
+        let entry = entries.next().ok_or(TryFromGroupError(()))?;
+
+        if entries.next().is_some() {
+            return Err(TryFromGroupError(()));
+        }
+
+        Ok(Self {
+            read_format: value.read_format - ReadFormat::GROUP,
+            value: entry.value(),
+            time_enabled: value.time_enabled,
+            time_running: value.time_running,
+            id: entry.id,
+            lost: entry.lost,
+        })
+    }
+}
+
+impl fmt::Debug for ReadValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let read_format = self.read_format;
         let mut dbg = debug_if! {
@@ -139,25 +111,29 @@ impl fmt::Debug for SingleRead {
     }
 }
 
+/// The values read from a group of counters.
 #[derive(Clone)]
-pub struct GroupRead<'a> {
+pub struct ReadGroup<'a> {
     read_format: ReadFormat,
     time_enabled: u64,
     time_running: u64,
     data: Cow<'a, [u64]>,
 }
 
-impl<'a> GroupRead<'a> {
+impl<'a> ReadGroup<'a> {
+    /// The number of counters contained within this group.
     pub fn len(&self) -> usize {
-        self.data.len() / self.read_format.element_len()
+        self.entries().count()
     }
 
+    /// Whether this group has any counters at all.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    pub fn into_owned(self) -> GroupRead<'static> {
-        GroupRead {
+    /// Convert all the borrowed data in this `ReadGroup` into owned data.
+    pub fn into_owned(self) -> ReadGroup<'static> {
+        ReadGroup {
             data: self.data.into_owned().into(),
             ..self
         }
@@ -180,13 +156,43 @@ impl<'a> GroupRead<'a> {
             .then_some(self.time_running)
     }
 
+    /// Get a group entry by its index.
+    pub fn get(&self, index: usize) -> Option<GroupEntry> {
+        self.entries().nth(index)
+    }
+
+    /// Get a group entry by its counter id.
+    pub fn get_by_id(&self, id: u64) -> Option<GroupEntry> {
+        if !self.read_format.contains(ReadFormat::ID) {
+            return None;
+        }
+
+        self.entries().find(|entry| entry.id() == Some(id))
+    }
+
     /// Iterate over the entries contained within this `GroupRead`.
     pub fn entries(&self) -> GroupIter {
         GroupIter::new(self)
     }
 }
 
-impl fmt::Debug for GroupRead<'_> {
+impl<'a> From<ReadValue> for ReadGroup<'a> {
+    fn from(value: ReadValue) -> Self {
+        let mut data = Vec::with_capacity(3);
+        data.push(value.value());
+        data.extend(value.id());
+        data.extend(value.lost());
+
+        Self {
+            read_format: value.read_format | ReadFormat::GROUP,
+            time_enabled: value.time_enabled,
+            time_running: value.time_running,
+            data: Cow::Owned(data),
+        }
+    }
+}
+
+impl fmt::Debug for ReadGroup<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         struct Entries<'a>(GroupIter<'a>);
 
@@ -209,6 +215,10 @@ impl fmt::Debug for GroupRead<'_> {
     }
 }
 
+/// The values read from a single perf event counter.
+///
+/// This will always include the counter value. The other fields are optional
+/// depending on how the counter's `read_format` was configured.
 #[derive(Copy, Clone)]
 pub struct GroupEntry {
     read_format: ReadFormat,
@@ -239,7 +249,7 @@ impl GroupEntry {
         let mut iter = slice.iter().copied();
         let mut read = || {
             iter.next()
-                .expect("slice was not the corred size for the configured read_format")
+                .expect("slice was not the correct size for the configured read_format")
         };
 
         Self {
@@ -275,16 +285,16 @@ impl fmt::Debug for GroupEntry {
 /// See [`GroupRead::entries`].
 #[derive(Clone)]
 pub struct GroupIter<'a> {
-    iter: std::slice::Chunks<'a, u64>,
+    iter: std::slice::ChunksExact<'a, u64>,
     read_format: ReadFormat,
 }
 
 impl<'a> GroupIter<'a> {
-    fn new(group: &'a GroupRead) -> Self {
+    fn new(group: &'a ReadGroup) -> Self {
         let read_format = group.read_format;
 
         Self {
-            iter: group.data.chunks(read_format.element_len()),
+            iter: group.data.chunks_exact(read_format.element_len()),
             read_format,
         }
     }
@@ -324,11 +334,16 @@ impl<'a> DoubleEndedIterator for GroupIter<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for GroupIter<'a> {}
+impl<'a> ExactSizeIterator for GroupIter<'a> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
 
 impl<'a> FusedIterator for GroupIter<'a> {}
 
-impl<'p> Parse<'p> for SingleRead {
+impl<'p> Parse<'p> for ReadValue {
     fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
@@ -369,7 +384,7 @@ impl<'p> Parse<'p> for SingleRead {
     }
 }
 
-impl<'p> Parse<'p> for GroupRead<'p> {
+impl<'p> Parse<'p> for ReadGroup<'p> {
     fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
@@ -419,23 +434,7 @@ impl<'p> Parse<'p> for GroupRead<'p> {
     }
 }
 
-impl<'p> Parse<'p> for ReadData<'p> {
-    fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
-    where
-        E: Endian,
-        B: ParseBuf<'p>,
-    {
-        let read_format = p.config().read_format();
-
-        if read_format.contains(ReadFormat::GROUP) {
-            Ok(Self::Group(p.parse()?))
-        } else {
-            Ok(Self::Single(p.parse()?))
-        }
-    }
-}
-
-impl<'p> Parse<'p> for Read<'p> {
+impl<'p> Parse<'p> for Read {
     fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
@@ -448,3 +447,15 @@ impl<'p> Parse<'p> for Read<'p> {
         })
     }
 }
+
+/// Error when attempting to convert [`ReadGroup`] to a [`ReadValue`].
+#[derive(Clone, Debug)]
+pub struct TryFromGroupError(());
+
+impl fmt::Display for TryFromGroupError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("can only convert groups with a single element to ReadValues")
+    }
+}
+
+impl std::error::Error for TryFromGroupError {}

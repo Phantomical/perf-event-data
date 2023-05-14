@@ -40,6 +40,11 @@
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! # Parsing `perf.data` files
+//! This crate doesn't yet have support for this, although it could be used as
+//! part of implementing a larger parser. If you would like to do this please
+//! open an issue!.
 
 #![warn(missing_docs)]
 

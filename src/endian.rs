@@ -1,5 +1,9 @@
 //! Traits and types for converting between a source endianness and that of the
 //! current host.
+//!
+//! Usually you will want [`Native`] endian if parsing data emitted by the
+//! kernel otherwise you will likely want [`Dynamic`] endian if parsing data
+//! from a file, although [`Little`] or [`Big`] endian may also work.
 
 /// A trait containing the required conversion functions needed to parse perf
 /// records.

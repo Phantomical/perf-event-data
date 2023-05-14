@@ -2,6 +2,8 @@
 //!
 //! This is mostly to separate them from the support code of this crate.
 
+// Having a file named aux causes errors on windows so we rename it here.
+#[path = "aux_record.rs"]
 mod aux;
 mod aux_output_hw_id;
 mod bpf_event;

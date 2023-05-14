@@ -66,6 +66,7 @@ impl<'a> ReadData<'a> {
     }
 }
 
+/// Data read from a counter.
 #[derive(Clone)]
 pub struct ReadValue {
     read_format: ReadFormat,

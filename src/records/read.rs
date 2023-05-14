@@ -282,7 +282,7 @@ impl fmt::Debug for GroupEntry {
 
 /// Iterator over the entries of a group.
 ///
-/// See [`GroupRead::entries`].
+/// See [`ReadGroup::entries`].
 #[derive(Clone)]
 pub struct GroupIter<'a> {
     iter: std::slice::ChunksExact<'a, u64>,

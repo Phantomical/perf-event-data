@@ -14,6 +14,8 @@
 
 Parse data emitted by [`perf_event_open`] into usable rust structs.
 
+[`perf_event_open`]: https://man7.org/linux/man-pages/man2/perf_event_open.2.html
+
 ## Getting Started
 
 - The `Record` type is an enum with every known record type.
@@ -44,4 +46,12 @@ fn main() {
 }
 ```
 
-[`perf_event_open`]: https://man7.org/linux/man-pages/man2/perf_event_open.2.html
+# See Also
+- The [`perf-event2`] crate allows you to set up sampled perf event counters.
+  You will likely need this, or an equivalent crate, in order to get the event
+  data this crate parses.
+- The [`linux-perf-event-reader`] crate provides similar functionality to this
+  one.
+
+[`perf-event2`]: https://crates.io/crates/perf-event2
+[`linux-perf-event-reader`]: https://crates.io/crates/linux-perf-event-reader

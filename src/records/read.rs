@@ -15,24 +15,15 @@ use std::iter::FusedIterator;
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
 #[derive(Clone, Debug)]
-pub struct Read<'a> {
+pub struct Read {
     /// The process ID.
     pub pid: u32,
 
     /// The thread ID.
     pub tid: u32,
 
-    pub values: ReadData<'a>,
-}
-
-impl<'a> Read<'a> {
-    /// Convert all the borrowed data in this `Read` into owned data.
-    pub fn into_owned(self) -> Read<'static> {
-        Read {
-            values: self.values.into_owned(),
-            ..self
-        }
-    }
+    /// The value read from the counter during task switch.
+    pub values: ReadValue,
 }
 
 #[derive(Clone, Debug)]
@@ -41,10 +32,10 @@ pub enum ReadData<'a> {
     ///
     /// This is what will be generated if the [`ParseConfig`]'s `read_format`
     /// did not contain `READ_FORMAT_GROUP`.
-    Single(SingleRead),
+    Single(ReadValue),
 
     /// Data for all counters in a group.
-    Group(GroupRead<'a>),
+    Group(ReadGroup<'a>),
 }
 
 impl<'a> ReadData<'a> {
@@ -76,7 +67,7 @@ impl<'a> ReadData<'a> {
 }
 
 #[derive(Clone)]
-pub struct SingleRead {
+pub struct ReadValue {
     read_format: ReadFormat,
     value: u64,
     time_enabled: u64,
@@ -85,7 +76,7 @@ pub struct SingleRead {
     lost: u64,
 }
 
-impl SingleRead {
+impl ReadValue {
     /// The value of the counter.
     pub fn value(&self) -> u64 {
         self.value
@@ -121,7 +112,7 @@ impl SingleRead {
     }
 }
 
-impl fmt::Debug for SingleRead {
+impl fmt::Debug for ReadValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let read_format = self.read_format;
         let mut dbg = debug_if! {
@@ -140,14 +131,14 @@ impl fmt::Debug for SingleRead {
 }
 
 #[derive(Clone)]
-pub struct GroupRead<'a> {
+pub struct ReadGroup<'a> {
     read_format: ReadFormat,
     time_enabled: u64,
     time_running: u64,
     data: Cow<'a, [u64]>,
 }
 
-impl<'a> GroupRead<'a> {
+impl<'a> ReadGroup<'a> {
     pub fn len(&self) -> usize {
         self.data.len() / self.read_format.element_len()
     }
@@ -156,8 +147,8 @@ impl<'a> GroupRead<'a> {
         self.len() == 0
     }
 
-    pub fn into_owned(self) -> GroupRead<'static> {
-        GroupRead {
+    pub fn into_owned(self) -> ReadGroup<'static> {
+        ReadGroup {
             data: self.data.into_owned().into(),
             ..self
         }
@@ -186,7 +177,7 @@ impl<'a> GroupRead<'a> {
     }
 }
 
-impl fmt::Debug for GroupRead<'_> {
+impl fmt::Debug for ReadGroup<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         struct Entries<'a>(GroupIter<'a>);
 
@@ -280,7 +271,7 @@ pub struct GroupIter<'a> {
 }
 
 impl<'a> GroupIter<'a> {
-    fn new(group: &'a GroupRead) -> Self {
+    fn new(group: &'a ReadGroup) -> Self {
         let read_format = group.read_format;
 
         Self {
@@ -328,7 +319,7 @@ impl<'a> ExactSizeIterator for GroupIter<'a> {}
 
 impl<'a> FusedIterator for GroupIter<'a> {}
 
-impl<'p> Parse<'p> for SingleRead {
+impl<'p> Parse<'p> for ReadValue {
     fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
@@ -369,7 +360,7 @@ impl<'p> Parse<'p> for SingleRead {
     }
 }
 
-impl<'p> Parse<'p> for GroupRead<'p> {
+impl<'p> Parse<'p> for ReadGroup<'p> {
     fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,
@@ -435,7 +426,7 @@ impl<'p> Parse<'p> for ReadData<'p> {
     }
 }
 
-impl<'p> Parse<'p> for Read<'p> {
+impl<'p> Parse<'p> for Read {
     fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
     where
         E: Endian,

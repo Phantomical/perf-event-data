@@ -122,7 +122,7 @@ pub trait Visitor<'a>: Sized {
     }
 
     /// Visit a [`Read`] record.
-    fn visit_read(self, record: Read<'a>, metadata: RecordMetadata) -> Self::Output {
+    fn visit_read(self, record: Read, metadata: RecordMetadata) -> Self::Output {
         self.visit_unimplemented(metadata)
     }
 

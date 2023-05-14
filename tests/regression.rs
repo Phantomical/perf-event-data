@@ -53,7 +53,7 @@ fn fuzz_with_config(data: &[u8]) {
 }
 
 #[cfg(not(feature = "arbitrary"))]
-fn fuzz_with_config(data: &[u8]) {
+fn fuzz_with_config(_data: &[u8]) {
     unimplemented!()
 }
 
@@ -73,7 +73,10 @@ fn enormous_slice() {
 }
 
 #[test]
-#[cfg_attr(not(feature = "arbitrary"), ignore = "requires the 'fuzzing' feature")]
+#[cfg_attr(
+    not(feature = "arbitrary"),
+    ignore = "requires the 'arbitrary' feature"
+)]
 fn buffer_smaller_than_sample_id_len() {
     fuzz_with_config(&[
         224, 115, 115, 93, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 255, 255,
@@ -85,7 +88,10 @@ fn buffer_smaller_than_sample_id_len() {
 }
 
 #[test]
-#[cfg_attr(not(feature = "arbitrary"), ignore = "requires the 'fuzzing' feature")]
+#[cfg_attr(
+    not(feature = "arbitrary"),
+    ignore = "requires the 'arbitrary' feature"
+)]
 fn oversize_alloc() {
     fuzz_with_config(&[
         214, 115, 91, 93, 115, 141, 140, 140, 148, 115, 115, 115, 115, 115, 115, 115, 145, 115,
@@ -100,7 +106,10 @@ fn oversize_alloc() {
 }
 
 #[test]
-#[cfg_attr(not(feature = "arbitrary"), ignore = "requires the 'fuzzing' feature")]
+#[cfg_attr(
+    not(feature = "arbitrary"),
+    ignore = "requires the 'arbitrary' feature"
+)]
 fn bad_group() {
     fuzz_with_config(&[
         214, 115, 91, 93, 115, 115, 115, 115, 59, 115, 115, 115, 115, 115, 115, 115, 23, 0, 0, 0,
@@ -110,7 +119,10 @@ fn bad_group() {
 }
 
 #[test]
-#[cfg_attr(not(feature = "arbitrary"), ignore = "requires the 'fuzzing' feature")]
+#[cfg_attr(
+    not(feature = "arbitrary"),
+    ignore = "requires the 'arbitrary' feature"
+)]
 fn oversize_read_group() {
     fuzz_with_config(&[
         214, 115, 91, 93, 115, 255, 255, 255, 255, 115, 115, 115, 115, 115, 145, 135, 9, 0, 0, 0,

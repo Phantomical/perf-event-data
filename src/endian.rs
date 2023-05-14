@@ -11,7 +11,7 @@
 /// # Safety
 /// If [`is_native`](Endian::is_native) returns true when the source endianness
 /// does not match the current host endianness then UB will occur.
-pub unsafe trait Endian: Copy + Clone {
+pub unsafe trait Endian: Clone {
     /// Convert a `u16` from the source endian to the native endian.
     fn convert_u16(&self, bytes: [u8; 2]) -> u16;
 

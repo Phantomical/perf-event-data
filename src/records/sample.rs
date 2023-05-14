@@ -11,7 +11,8 @@ use perf_event_open_sys::bindings::perf_mem_data_src;
 
 use crate::parse::ParseError;
 use crate::prelude::*;
-use crate::ReadData;
+use crate::ReadGroup;
+use crate::ReadValue;
 
 mod sample_impl {
     use super::*;
@@ -31,7 +32,7 @@ mod sample_impl {
             pub stream_id: u64,
             pub cpu: u32,
             pub period: u64,
-            pub values: ReadData<'a>,
+            pub values: ReadGroup<'a>,
             pub callchain: Cow<'a, [u64]>,
             pub raw: Cow<'a, [u8]>,
             pub lbr_hw_index: u64,
@@ -97,7 +98,7 @@ impl<'a> Sample<'a> {
         self.0.period().copied()
     }
 
-    pub fn values(&self) -> Option<&ReadData<'a>> {
+    pub fn values(&self) -> Option<&ReadGroup<'a>> {
         self.0.values()
     }
 
@@ -180,7 +181,13 @@ impl<'p> Parse<'p> for Sample<'p> {
             Ok((p.parse_u32()?, p.parse_u32()?).0)
         })?;
         let period = p.parse_if(sty.contains(SampleFlags::PERIOD))?;
-        let values = p.parse_if(sty.contains(SampleFlags::READ))?;
+        let values = p.parse_if_with(sty.contains(SampleFlags::READ), |p| {
+            if p.config().read_format().contains(ReadFormat::GROUP) {
+                p.parse()
+            } else {
+                ReadValue::parse(p).map(From::from)
+            }
+        })?;
         let callchain = p.parse_if_with(sty.contains(SampleFlags::CALLCHAIN), |p| {
             let nr = p.parse_u64()? as _;
             unsafe { p.parse_slice(nr) }

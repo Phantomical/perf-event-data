@@ -53,7 +53,7 @@ fn fuzz_with_config(data: &[u8]) {
 }
 
 #[cfg(not(feature = "arbitrary"))]
-fn fuzz_with_config(data: &[u8]) {
+fn fuzz_with_config(_data: &[u8]) {
     unimplemented!()
 }
 

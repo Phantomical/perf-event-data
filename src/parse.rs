@@ -6,10 +6,94 @@
 //! fields but [`Parser`] provides many other helper methods for when that isn't
 //! enough.
 //!
-//! # Using the Parser
-//! If you just need to parse records from a buffer (e.g., you are parsing from
-//! a file or the output of `perf_event_open`) then you can use
-//! [`Parser::parse_record`] along with a visitor of your choice.
+//! # Parsing a Record
+//! The quickest and easiest way to get started is to just parse everything to
+//! the [`Record`] type.
+//!
+//! ```
+//! # fn main() -> perf_event_data::parse::ParseResult<()> {
+//! use perf_event_data::endian::Little;
+//! use perf_event_data::parse::{ParseConfig, Parser};
+//! use perf_event_data::Record;
+//!
+//! let data: &[u8] = // ...
+//! #       perf_event_data::doctest::MMAP;
+//! let config = ParseConfig::<Little>::default();
+//! let mut parser = Parser::new(data, config);
+//! let record: Record = parser.parse()?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! # Parsing Custom Types
+//! The types provided in this crate aim to cover all the possible types of
+//! record that can be emitted by `perf_event_open`. However, if you control the
+//! configuration passed to `perf_event_open` then the types in this crate can
+//! be overly general. You may find it easier to define custom types that match
+//! exactly the record types you know will be generated.
+//!
+//! To do that you will need to implement [`Parse`] for your type, use
+//! [`Parser::parse_metadata`] to parse the record frame, and then use
+//! [`Parser::parse`] to parse your custom record type.
+//!
+//! Here we define a sample type that only parses the custom fields we care
+//! about.
+//! ```
+//! # fn main() -> perf_event_data::parse::ParseResult<()> {
+//! use perf_event_data::endian::{Endian, Little};
+//! use perf_event_data::parse::{Parse, ParseBuf, ParseConfig, ParseResult, Parser};
+//! use perf_event_data::Registers;
+//! use perf_event_open_sys::bindings::PERF_RECORD_SAMPLE;
+//!
+//! struct CustomSample {
+//!     pub ip: u64,
+//!     pub pid: u32,
+//!     pub tid: u32,
+//!     pub callstack: Vec<u64>,
+//!     pub cgroup: u64,
+//! }
+//!
+//! impl<'p> Parse<'p> for CustomSample {
+//!     fn parse<B, E>(p: &mut Parser<B, E>) -> ParseResult<Self>
+//!     where
+//!         B: ParseBuf<'p>,
+//!         E: Endian,
+//!     {
+//!         Ok(Self {
+//!             ip: p.parse()?,
+//!             pid: p.parse()?,
+//!             tid: p.parse()?,
+//!             callstack: {
+//!                 let len = p.parse_u64()?;
+//!                 p.parse_repeated(len as usize)?
+//!             },
+//!             cgroup: p.parse()?,
+//!         })
+//!     }
+//! }
+//!
+//! let data: &[u8] = // ...
+//! #   perf_event_data::doctest::CUSTOM_SAMPLE;
+//! let attr: perf_event_open_sys::bindings::perf_event_attr = // ...
+//! #   Default::default();
+//! let config: ParseConfig<Little> = ParseConfig::from(attr);
+//! let mut parser = Parser::new(data, config);
+//!
+//! let (mut p, metadata) = parser.parse_metadata()?;
+//!
+//! assert_eq!(metadata.ty(), PERF_RECORD_SAMPLE);
+//! let sample: CustomSample = p.parse()?;
+//! #
+//! # assert_eq!(metadata.misc(), 0);
+//! # assert_eq!(sample.ip, 0x3C2B1A9948331210, "ip did not match");
+//! # assert_eq!(sample.pid, 2);
+//! # assert_eq!(sample.tid, 3);
+//! # assert_eq!(sample.callstack.len(), 4);
+//! # assert_eq!(sample.cgroup, 0xC9406500006540C9, "gcroup did not match");
+//! #
+//! # Ok(())
+//! # }
+//! ```
 
 use std::borrow::Cow;
 use std::mem::MaybeUninit;
@@ -19,7 +103,9 @@ use perf_event_open_sys::bindings;
 use crate::cowutils::CowSliceExt;
 use crate::endian::Endian;
 use crate::parsebuf::ParseBufCursor;
-use crate::{RecordMetadata, SampleId, Visitor};
+use crate::{Record, RecordMetadata, SampleId, Visitor};
+
+used_in_docs!(Record);
 
 pub use crate::config::ParseConfig;
 pub use crate::error::{ErrorKind, ParseError, ParseResult};

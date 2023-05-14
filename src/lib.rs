@@ -3,17 +3,18 @@
 //! To parse data you will need the types in the [`parse`] module.
 //!
 //! # Example
+//! Parsing a mmap record directly from its raw byte format.
 //! ```
-//! # fn main() -> perf_event_data::parse::Result<()> {
-//! use perf_event_data::endian::Native;
+//! # fn main() -> perf_event_data::parse::ParseResult<()> {
+//! use perf_event_data::endian::Little;
 //! use perf_event_data::parse::{ParseConfig, Parser};
 //! use perf_event_data::Record;
 //!
 //! let data: &[u8] = &[
-//!     1, 0, 0, 0, 40, 0, 0, 0, 22, 76, 1, 0, 23, 76, 1, 0, 0, 160, 72, 150, 79, 127, 0, 0, 0, 16,
+//!     1, 0, 0, 0, 0, 0, 48, 0, 22, 76, 1, 0, 23, 76, 1, 0, 0, 160, 72, 150, 79, 127, 0, 0, 0, 16,
 //!     0, 0, 0, 0, 0, 0, 0, 160, 72, 150, 79, 127, 0, 0, 47, 47, 97, 110, 111, 110, 0, 0,
 //! ];
-//! let config = ParseConfig::<Native>::default();
+//! let config = ParseConfig::<Little>::default();
 //! let mut parser = Parser::new(data, config);
 //! let record: Record = parser.parse()?;
 //!
@@ -53,3 +54,30 @@ mod prelude {
 pub use crate::flags::*;
 pub use crate::records::*;
 pub use crate::visitor::{RecordMetadata, Visitor};
+
+/// Common data used in doctests.
+///
+/// This way it doesn't need to be repeated multiple times unless we want to
+/// show it as part of the doc test.
+#[doc(hidden)]
+pub mod doctest {
+    pub const MMAP: &[u8] = &[
+        1, 0, 0, 0, 0, 0, 48, 0, 22, 76, 1, 0, 23, 76, 1, 0, 0, 160, 72, 150, 79, 127, 0, 0, 0, 16,
+        0, 0, 0, 0, 0, 0, 0, 160, 72, 150, 79, 127, 0, 0, 47, 47, 97, 110, 111, 110, 0, 0,
+    ];
+
+    pub const CUSTOM_SAMPLE: &[u8] = &[
+        0x09, 0x00, 0x00, 0x00, // type
+        0x00, 0x00, // misc
+        0x49, 0x00, // size
+        0x10, 0x12, 0x33, 0x48, 0x99, 0x1A, 0x2B, 0x3C, // ip
+        0x02, 0x00, 0x00, 0x00, // pid
+        0x03, 0x00, 0x00, 0x00, // tid
+        0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // nr
+        0x01, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // stack1
+        0x02, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // stack2
+        0x03, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // stack3
+        0x04, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // stack4
+        0xC9, 0x40, 0x65, 0x00, 0x00, 0x65, 0x40, 0xC9, // cgroup
+    ];
+}

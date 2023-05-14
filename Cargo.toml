@@ -11,8 +11,9 @@ keywords = ["linux", "perf"]
 categories = [
   "development-tools::profiling",
   "hardware-support",
-  "os::linux-apis"
+  "os::linux-apis",
 ]
+exclude = ["/.github", "/.vscode"]
 
 [dependencies]
 bitflags = "2.0"
@@ -22,10 +23,7 @@ perf-event-open-sys2 = "5.0"
 arbitrary = { version = "1", optional = true, features = ["derive"] }
 
 [workspace]
-members = [
-  ".",
-  "fuzz"
-]
+members = [".", "fuzz"]
 
 [profile.release]
 debug = 2

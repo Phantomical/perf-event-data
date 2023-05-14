@@ -1,6 +1,21 @@
 //! Parse data emitted by the linux `perf_event_open` syscall.
 //!
-//! To parse data you will need the types in the [`parse`] module.
+//! This crate is organized like this:
+//! - The root contains all the data types that records can be parsed into. This
+//!   includes not only the types corresponding to the perf records but also
+//!   those that make up their fields, and so on.
+//! - The [`parse`][mod] module contains types and traits needed to implement
+//!   parsing support. Most types exposed in the root implement [`Parse`] but to
+//!   actually make use of that you will need the [`Parser`] and [`ParseConfig`]
+//!   types from the [`parse`][mod] module.
+//! - The [`endian`] module contains some types for converting values to the
+//!   native endian. You likely won't have to interact with it other than
+//!   picking one type to use when creating a [`ParseConfig`].
+//!
+//! [mod]: crate::parse
+//! [`Parse`]: crate::parse::Parse
+//! [`Parser`]: crate::parse::Parser
+//! [`ParseConfig`]: crate::parse::ParseConfig
 //!
 //! # Example
 //! Parsing a mmap record directly from its raw byte format.

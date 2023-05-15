@@ -36,6 +36,18 @@ pub struct ReadValue {
 }
 
 impl ReadValue {
+    /// Create a `ReadValue` from a `ReadGroup` and its entry within that group.
+    pub fn from_group_and_entry(group: &ReadGroup<'_>, entry: &GroupEntry) -> Self {
+        Self {
+            read_format: group.read_format - ReadFormat::GROUP,
+            value: entry.value,
+            time_enabled: group.time_enabled,
+            time_running: group.time_running,
+            id: entry.id,
+            lost: entry.lost,
+        }
+    }
+
     /// The value of the counter.
     pub fn value(&self) -> u64 {
         self.value

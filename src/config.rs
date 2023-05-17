@@ -17,12 +17,12 @@ bitflags! {
     /// sample_type to its own field).
     #[derive(Copy, Clone, Debug, Default)]
     struct ConfigFlags : u64 {
-        const READ_FORMAT = ((1u64 << Self::READ_FORMAT_WIDTH) - 1);
-        const SAMPLE_TYPE = (u64::MAX << Self::READ_FORMAT_WIDTH) & (Self::SAMPLE_ID_ALL.bits() - 1);
+        const READ_FORMAT = ((1u64 << ConfigFlags::READ_FORMAT_WIDTH) - 1);
+        const SAMPLE_TYPE = (u64::MAX << ConfigFlags::READ_FORMAT_WIDTH) & (ConfigFlags::SAMPLE_ID_ALL.bits() - 1);
 
         const SAMPLE_ID_ALL   = 1 << 46;
         const BRANCH_HW_INDEX = 1 << 47;
-        const MISC = u64::MAX << Self::MISC_OFFSET;
+        const MISC = u64::MAX << ConfigFlags::MISC_OFFSET;
     }
 }
 

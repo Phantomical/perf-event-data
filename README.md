@@ -8,7 +8,7 @@
 
 </div>
 
-[ci badge]: https://img.shields.io/github/actions/workflow/status/phantomical/perf-event-data/dispatch.yml?branch=master&style=flat-square
+[ci badge]: https://img.shields.io/github/actions/workflow/status/phantomical/perf-event-data/cargo.yml?branch=master&style=flat-square
 [docs.rs badge]: https://img.shields.io/docsrs/perf-event-data?style=flat-square
 [crates.io badge]: https://img.shields.io/crates/v/perf-event-data?style=flat-square
 

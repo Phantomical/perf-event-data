@@ -59,6 +59,8 @@
 //! open an issue!
 
 #![warn(missing_docs)]
+// bitflags generates this all over the place so better to silence it.
+#![allow(clippy::assign_op_pattern)]
 
 // Needs to be first so other modules can see the macros.
 #[macro_use]

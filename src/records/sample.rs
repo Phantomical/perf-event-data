@@ -196,16 +196,17 @@ impl<'p> Parse<'p> for Sample<'p> {
             let size = p.parse_u64()? as _;
             p.parse_bytes(size)
         })?;
-        let (lbr, lbr_hw_index) = p
-            .parse_if_with(sty.contains(SampleFlags::BRANCH_STACK), |p| {
-                let nr = p.parse_u64()? as usize;
-                let hw_index = p.parse_if(branch_hw_index)?;
-                let lbr = unsafe { p.parse_slice(nr)? };
+        let lbr = p.parse_if_with(sty.contains(SampleFlags::BRANCH_STACK), |p| {
+            let nr = p.parse_u64()? as usize;
+            let hw_index = p.parse_if(branch_hw_index)?;
+            let lbr = unsafe { p.parse_slice(nr)? };
 
-                Ok((lbr, hw_index))
-            })?
-            .unzip();
-        let lbr_hw_index = lbr_hw_index.flatten();
+            Ok((lbr, hw_index))
+        })?;
+        let (lbr, lbr_hw_index) = match lbr {
+            Some((lbr, hw_index)) => (Some(lbr), hw_index),
+            _ => (None, None),
+        };
         let regs_user = p.parse_if_with(sty.contains(SampleFlags::REGS_USER), |p| {
             Registers::parse_user(p)
         })?;

@@ -17,7 +17,7 @@ exclude = ["/.github", "/.vscode"]
 
 [dependencies]
 bitflags = "2.0"
-perf-event-open-sys2 = "5.0"
+perf-event-open-sys2 = "5.0.3"
 
 # Used internally, for fuzzing support
 arbitrary = { version = "1", optional = true, features = ["derive"] }

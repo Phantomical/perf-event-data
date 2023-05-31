@@ -171,7 +171,7 @@ where
 
     /// Advance the current parser by `offset` and return a new parser for the
     /// data within.
-    fn split_at(&mut self, offset: usize) -> ParseResult<Parser<ParseBufCursor<'p>, E>> {
+    pub(crate) fn split_at(&mut self, offset: usize) -> ParseResult<Parser<ParseBufCursor<'p>, E>> {
         let cursor = ParseBufCursor::new(&mut self.data, offset)?;
         Ok(Parser::new(cursor, self.config().clone()))
     }

@@ -2,9 +2,12 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::fmt::{self, Display};
 
+use perf_event_open_sys::bindings::perf_event_attr;
+
 use crate::parse::{Parse, ParseBuf, ParseConfig, Parser};
 
 used_in_docs!(Parse, Parser, ParseBuf, ParseConfig);
+used_in_docs!(perf_event_attr);
 
 type BoxedError = Box<dyn Error + Send + Sync + 'static>;
 
@@ -91,6 +94,13 @@ pub enum ErrorKind {
     /// cause parsing to to return incorrect results.
     UnsupportedConfig,
 
+    /// The data type that was being parsed by this library contains data that
+    /// is not yet supported by this library.
+    ///
+    /// This is used when attempting to parse a [`perf_event_attr`] that has
+    /// fields from versions of the kernel that this crate does not support.
+    UnsupportedData,
+
     /// An external error, forwarded from the [`ParseBuf`] implementation.
     ///
     /// This error will never be emitted by a parse method in this crate.
@@ -102,6 +112,7 @@ impl Display for ParseError {
         match self.code {
             ErrorKind::Eof => f.write_str("unexpected EOF during parsing")?,
             ErrorKind::InvalidRecord => f.write_str("invalid record")?,
+            ErrorKind::UnsupportedData => f.write_str("unsupported serialized data")?,
             ErrorKind::UnsupportedConfig => f.write_str("unsupported config")?,
             ErrorKind::External => {
                 // This type should always have a source, but, however, if it doesn't then we

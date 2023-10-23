@@ -1,5 +1,7 @@
-use crate::prelude::*;
 use std::borrow::Cow;
+use std::fmt;
+
+use crate::prelude::*;
 
 /// CGROUP records indicate when a new cgroup is created and activated.
 ///
@@ -7,7 +9,7 @@ use std::borrow::Cow;
 /// documentation.
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct CGroup<'a> {
     /// The cgroup ID.
     pub id: u64,
@@ -46,5 +48,14 @@ impl<'p> Parse<'p> for CGroup<'p> {
             id: p.parse()?,
             path: p.parse_rest_trim_nul()?,
         })
+    }
+}
+
+impl fmt::Debug for CGroup<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CGroup")
+            .field("id", &self.id)
+            .field("path", &crate::util::fmt::ByteStr(&self.path))
+            .finish()
     }
 }

@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::ffi::OsStr;
+use std::fmt;
 
 use crate::prelude::*;
 use crate::Mmap2;
@@ -10,7 +11,7 @@ use crate::Mmap2;
 /// documentation here.
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Mmap<'a> {
     /// The process ID.
     pub pid: u32,
@@ -92,6 +93,19 @@ impl<'p> Parse<'p> for Mmap<'p> {
 impl<'a> From<Mmap2<'a>> for Mmap<'a> {
     fn from(value: Mmap2<'a>) -> Self {
         value.into_mmap()
+    }
+}
+
+impl fmt::Debug for Mmap<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Mmap")
+            .field("pid", &self.pid)
+            .field("tid", &self.tid)
+            .field("addr", &crate::util::fmt::HexAddr(self.addr))
+            .field("len", &self.len)
+            .field("pgoff", &self.pgoff)
+            .field("filename", &crate::util::fmt::ByteStr(&self.filename))
+            .finish()
     }
 }
 

@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt;
 
 use bitflags::bitflags;
 use perf_event_open_sys::bindings;
@@ -12,7 +13,7 @@ use crate::prelude::*;
 /// more documentation.
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[allow(missing_docs)]
 pub struct KSymbol<'a> {
     pub addr: u64,
@@ -29,6 +30,18 @@ impl<'a> KSymbol<'a> {
             name: self.name.into_owned().into(),
             ..self
         }
+    }
+}
+
+impl fmt::Debug for KSymbol<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("KSymbol")
+            .field("addr", &crate::util::fmt::HexAddr(self.addr))
+            .field("len", &self.len)
+            .field("ksym_type", &self.ksym_type)
+            .field("flags", &self.flags)
+            .field("name", &crate::util::fmt::ByteStr(&self.name))
+            .finish()
     }
 }
 

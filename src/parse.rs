@@ -100,9 +100,9 @@ use std::mem::MaybeUninit;
 
 use perf_event_open_sys::bindings;
 
-use crate::cowutils::CowSliceExt;
 use crate::endian::Endian;
 use crate::parsebuf::ParseBufCursor;
+use crate::util::cow::CowSliceExt;
 use crate::{Record, RecordMetadata, SampleId, Visitor};
 
 used_in_docs!(Record);

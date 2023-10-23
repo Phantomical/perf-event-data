@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt;
 
 use crate::prelude::*;
 
@@ -8,7 +9,7 @@ use crate::prelude::*;
 /// more documentation.
 ///
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TextPoke<'a> {
     /// The address of the change.
     pub addr: u64,
@@ -37,7 +38,7 @@ impl<'p> Parse<'p> for TextPoke<'p> {
         E: Endian,
         B: ParseBuf<'p>,
     {
-        use crate::cowutils::CowSliceExt;
+        use crate::util::cow::CowSliceExt;
 
         let addr = p.parse()?;
         let old_len = p.parse_u16()? as usize;
@@ -58,6 +59,16 @@ impl<'p> Parse<'p> for TextPoke<'p> {
             old_bytes,
             new_bytes,
         })
+    }
+}
+
+impl fmt::Debug for TextPoke<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TextPoke")
+            .field("addr", &crate::util::fmt::HexAddr(self.addr))
+            .field("old_bytes", &self.old_bytes)
+            .field("new_bytes", &self.new_bytes)
+            .finish()
     }
 }
 

@@ -27,6 +27,7 @@ mod sample_impl {
             pub pid: u32,
             pub tid: u32,
             pub time: u64,
+            #[debug(with = crate::util::fmt::HexAddr)]
             pub addr: u64,
             pub id: u64,
             pub stream_id: u64,
@@ -43,6 +44,7 @@ mod sample_impl {
             pub data_src: DataSource,
             pub transaction: Txn,
             pub regs_intr: Registers<'a>,
+            #[debug(with = crate::util::fmt::HexAddr)]
             pub phys_addr: u64,
             pub aux: Cow<'a, [u8]>,
             pub data_page_size: u64,

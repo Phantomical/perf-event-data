@@ -36,7 +36,7 @@ impl<'a> KSymbol<'a> {
 impl fmt::Debug for KSymbol<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("KSymbol")
-            .field("addr", &format_args!("{:#016X}", self.addr))
+            .field("addr", &crate::util::fmt::HexAddr(self.addr))
             .field("len", &self.len)
             .field("ksym_type", &self.ksym_type)
             .field("flags", &self.flags)

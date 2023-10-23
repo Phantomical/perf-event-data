@@ -1,4 +1,4 @@
-use std::fmt::{self, Write};
+use std::fmt::{self, Write, UpperHex};
 
 /// Write an array of bytes containing possibly invalid UTF-8 as if it was a
 /// debug string.
@@ -38,5 +38,13 @@ impl fmt::Debug for ByteStr<'_> {
         }
 
         f.write_char('"')
+    }
+}
+
+pub(crate) struct HexAddr<T>(pub T);
+
+impl<T: UpperHex> fmt::Debug for HexAddr<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("{:#016X}", self.0))
     }
 }

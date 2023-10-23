@@ -218,7 +218,7 @@ impl fmt::Debug for Mmap2<'_> {
         let mut dbg = f.debug_struct("Mmap2");
         dbg.field("pid", &self.pid)
             .field("tid", &self.tid)
-            .field("addr", &self.addr)
+            .field("addr", &crate::util::fmt::HexAddr(self.addr))
             .field("len", &self.len)
             .field("pgoff", &self.pgoff);
 

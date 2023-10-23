@@ -101,7 +101,7 @@ impl fmt::Debug for Mmap<'_> {
         f.debug_struct("Mmap")
             .field("pid", &self.pid)
             .field("tid", &self.tid)
-            .field("addr", &format_args!("{:#016X}", &self.addr))
+            .field("addr", &crate::util::fmt::HexAddr(self.addr))
             .field("len", &self.len)
             .field("pgoff", &self.pgoff)
             .field("filename", &crate::util::fmt::ByteStr(&self.filename))

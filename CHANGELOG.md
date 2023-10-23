@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The debug representation of several record types has been changed to make it
   more readable.
 
+### Fixed
+- Fixed an infinite loop with unbounded memory usage in `ParseBufCursor::new`
+  when the first chunk returned by the `ParseBuf` had length 0.
+
 ## [0.1.2] - 2023-05-16
 ### Changed
 - Fixed compile breakage due to https://github.com/bitflags/bitflags/issues/353

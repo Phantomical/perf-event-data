@@ -170,8 +170,13 @@ impl<'p> ParseBufCursor<'p> {
             let mut chunk = buf.chunk()?;
             chunk.truncate(len);
 
-            len -= chunk.len();
-            chunks.push(chunk.to_cow());
+            if chunk.len() > 0 {
+                chunks.push(chunk.to_cow());
+            }
+
+            let chunk_len = chunk.len();
+            len -= chunk_len;
+            buf.advance(chunk_len);
         }
 
         chunks.reverse();
@@ -242,5 +247,46 @@ unsafe impl<'p> ParseBuf<'p> for ParseBufCursor<'p> {
     #[inline]
     fn remaining_hint(&self) -> Option<usize> {
         Some(self.len)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct ChunkBuf<'a>(Vec<&'a [u8]>);
+
+    unsafe impl<'p> ParseBuf<'p> for ChunkBuf<'p> {
+        fn chunk(&mut self) -> ParseResult<ParseBufChunk<'_, 'p>> {
+            self.0
+                .first()
+                .copied()
+                .map(ParseBufChunk::External)
+                .ok_or_else(ParseError::eof)
+        }
+
+        fn advance(&mut self, mut count: usize) {
+            while let Some(chunk) = self.0.first_mut() {
+                if count < chunk.len() {
+                    chunk.advance(count);
+                    break;
+                } else {
+                    count -= chunk.len();
+                    self.0.remove(0);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn cursor_over_split() {
+        let mut buf = ChunkBuf(vec![b"abcdef", b"012456789"]);
+        let _cursor = ParseBufCursor::new(&mut buf, 8);
+    }
+
+    #[test]
+    fn cursor_zero_split() {
+        let mut buf = ChunkBuf(vec![b"", b"01234"]);
+        let _cursor = ParseBufCursor::new(&mut buf, 4);
     }
 }

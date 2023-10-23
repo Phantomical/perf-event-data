@@ -37,7 +37,7 @@ impl<'p> Parse<'p> for TextPoke<'p> {
         E: Endian,
         B: ParseBuf<'p>,
     {
-        use crate::cowutils::CowSliceExt;
+        use crate::util::cow::CowSliceExt;
 
         let addr = p.parse()?;
         let old_len = p.parse_u16()? as usize;

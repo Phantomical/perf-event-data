@@ -67,7 +67,6 @@
 mod macros;
 
 mod config;
-mod cowutils;
 pub mod endian;
 mod error;
 mod flags;
@@ -75,6 +74,7 @@ mod impls;
 pub mod parse;
 mod parsebuf;
 mod records;
+mod util;
 mod visitor;
 
 mod prelude {

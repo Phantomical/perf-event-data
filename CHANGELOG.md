@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `Parse` is now implemented for `perf_event_attr` from `perf_event_open_sys2`.
 
+### Changed
+- The debug representation of several record types has been changed to make it
+  more readable.
+
 ## [0.1.2] - 2023-05-16
 ### Changed
 - Fixed compile breakage due to https://github.com/bitflags/bitflags/issues/353

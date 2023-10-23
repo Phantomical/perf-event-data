@@ -185,7 +185,10 @@ macro_rules! option_struct {
         $( #[$attr:meta] )*
         $( ##[copy $( $copy:tt )?] )?
         $vis:vis struct $name:ident$(<$lt:lifetime>)?: $flag:ty {
-            $( $fvis:vis $field:ident : $ty:ty ),* $(,)?
+            $(
+                $( #[debug($( $dbgopt:tt )*)] )?
+                $fvis:vis $field:ident : $ty:ty
+            ),* $(,)?
         }
     } => {
         $( #[$attr] )*
@@ -266,9 +269,13 @@ macro_rules! option_struct {
                     let mut dbg = f.debug_struct(stringify!($name));
 
                     $(
-                        if let Some($field) = self.$field() {
-                            dbg.field(stringify!($field), $field);
-                        }
+                        // if let Some($field) = self.$field() {
+                        //     dbg.field(stringify!($field), $field);
+                        // }
+                        option_struct!(
+                            impl(debug_field $( , #[debug($( $dbgopt )*)] )? )
+                            self, dbg, $field, $ty
+                        );
                     )*
 
                     dbg.finish_non_exhaustive()
@@ -306,6 +313,15 @@ macro_rules! option_struct {
                 )*
             }
         }
+    };
+    (impl(debug_field, #[debug(with = $fmt:expr)]) $self:expr, $dbg:expr, $field:ident, $fieldty:ty) => {
+        if let Some($field) = $self.$field() {
+            $dbg.field(stringify!($field), &$fmt($field));
+        }
+    };
+    (impl(debug_field) $self:expr, $dbg:expr, $field:ident, $fieldty:ty) => {
+        if let Some($field) = $self.$field() {
+            $dbg.field(stringify!($field), $field);
+        }
     }
-
 }

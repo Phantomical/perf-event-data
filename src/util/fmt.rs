@@ -1,4 +1,4 @@
-use std::fmt::{self, Write, UpperHex};
+use std::fmt::{self, UpperHex, Write};
 
 /// Write an array of bytes containing possibly invalid UTF-8 as if it was a
 /// debug string.

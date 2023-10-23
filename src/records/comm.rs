@@ -1,6 +1,8 @@
-use crate::prelude::*;
 use std::borrow::Cow;
 use std::ffi::OsStr;
+use std::fmt;
+
+use crate::prelude::*;
 
 used_in_docs!(OsStr);
 
@@ -20,7 +22,7 @@ used_in_docs!(OsStr);
 /// [`prctl(PR_SET_NAME)`]: https://man7.org/linux/man-pages/man2/prctl.2.html
 /// [`COMM_EXEC`]: MiscFlags::COMM_EXEC
 /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Comm<'a> {
     /// The process ID.
     pub pid: u32,
@@ -63,6 +65,16 @@ impl<'p> Parse<'p> for Comm<'p> {
             tid: p.parse()?,
             comm: p.parse_rest_trim_nul()?,
         })
+    }
+}
+
+impl fmt::Debug for Comm<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Comm")
+            .field("pid", &self.pid)
+            .field("tid", &self.tid)
+            .field("comm", &crate::util::fmt::ByteStr(&self.comm))
+            .finish()
     }
 }
 

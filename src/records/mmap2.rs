@@ -243,7 +243,7 @@ impl fmt::Debug for Mmap2<'_> {
 
         dbg.field("prot", &self.prot)
             .field("flags", &self.flags)
-            .field("filename", &self.filename);
+            .field("filename", &crate::util::fmt::ByteStr(&self.filename));
 
         dbg.finish()
     }

@@ -84,6 +84,7 @@ mod prelude {
     pub(crate) use crate::error::ErrorKind;
     pub(crate) use crate::flags::{ReadFormat, SampleFlags};
     pub(crate) use crate::parse::{Parse, ParseBuf, ParseResult, Parser};
+    pub(crate) use c_enum::c_enum;
 }
 
 pub use crate::flags::*;

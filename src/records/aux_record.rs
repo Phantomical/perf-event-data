@@ -46,10 +46,20 @@ bitflags! {
 
 c_enum! {
     /// PMU-specific trace format type
+    #[derive(Copy, Clone, Eq, PartialEq, Hash)]
+    pub enum AuxPmuFormatType : u8 {
+        CORESIGHT = (bindings::PERF_AUX_FLAG_CORESIGHT_FORMAT_CORESIGHT >> 8) as _,
+        CORESIGHT_RAW = (bindings::PERF_AUX_FLAG_CORESIGHT_FORMAT_RAW >> 8) as _,
+    }
+
     #[allow(missing_docs)]
-    pub struct AuxPmuFormatType : u8 {
-        const CORESIGHT = (bindings::PERF_AUX_FLAG_CORESIGHT_FORMAT_CORESIGHT >> 8) as _;
-        const CORESIGHT_RAW = (bindings::PERF_AUX_FLAG_CORESIGHT_FORMAT_RAW >> 8) as _;
+    impl {}
+}
+
+impl AuxPmuFormatType {
+    /// Create a new `AuxPmuFormatType`.
+    pub const fn new(value: u8) -> Self {
+        Self(value)
     }
 }
 

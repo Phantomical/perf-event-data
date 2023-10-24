@@ -18,15 +18,23 @@ pub struct BpfEvent {
 
 c_enum! {
     /// Indicates the type of a [`BpfEvent`]
-    pub struct BpfEventType : u16 {
+    #[derive(Copy, Clone, Eq, PartialEq, Hash)]
+    pub enum BpfEventType : u16 {
         /// The event type is unknown.
-        const UNKNOWN = bindings::PERF_BPF_EVENT_UNKNOWN as _;
+        UNKNOWN = bindings::PERF_BPF_EVENT_UNKNOWN as _,
 
         /// A BPF program was loaded.
-        const PROG_LOAD = bindings::PERF_BPF_EVENT_PROG_LOAD as _;
+        PROG_LOAD = bindings::PERF_BPF_EVENT_PROG_LOAD as _,
 
         /// A BPF program was unloaded.
-        const PROG_UNLOAD = bindings::PERF_BPF_EVENT_PROG_UNLOAD as _;
+        PROG_UNLOAD = bindings::PERF_BPF_EVENT_PROG_UNLOAD as _,
+    }
+}
+
+impl BpfEventType {
+    /// Create a new `BpfEventType`.
+    pub const fn new(value: u16) -> Self {
+        Self(value)
     }
 }
 

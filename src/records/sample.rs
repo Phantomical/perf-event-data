@@ -301,10 +301,18 @@ pub struct Registers<'a> {
 
 c_enum! {
     /// ABI of the program when sampling registers.
-    pub struct SampleRegsAbi : u64 {
-        const NONE = bindings::PERF_SAMPLE_REGS_ABI_NONE as _;
-        const ABI_32 = bindings::PERF_SAMPLE_REGS_ABI_32 as _;
-        const ABI_64 = bindings::PERF_SAMPLE_REGS_ABI_64 as _;
+    #[derive(Copy, Clone, Eq, PartialEq, Hash)]
+    pub enum SampleRegsAbi : u64 {
+        NONE = bindings::PERF_SAMPLE_REGS_ABI_NONE as _,
+        ABI_32 = bindings::PERF_SAMPLE_REGS_ABI_32 as _,
+        ABI_64 = bindings::PERF_SAMPLE_REGS_ABI_64 as _,
+    }
+}
+
+impl SampleRegsAbi {
+    /// Create a new `SampleRegsAbi`.
+    pub const fn new(value: u64) -> Self {
+        Self(value)
     }
 }
 
@@ -357,19 +365,26 @@ c_enum! {
     /// [manpage] but is present within the perf_event headers.
     ///
     /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
-    pub struct BranchType : u8 {
-        const UNKNOWN = bindings::PERF_BR_UNKNOWN as _;
-        const COND = bindings::PERF_BR_COND as _;
-        const UNCOND = bindings::PERF_BR_UNCOND as _;
-        const IND = bindings::PERF_BR_IND as _;
-        const CALL = bindings::PERF_BR_CALL as _;
-        const IND_CALL = bindings::PERF_BR_IND_CALL as _;
-        const RET = bindings::PERF_BR_RET as _;
-        const SYSCALL = bindings::PERF_BR_SYSCALL as _;
-        const COND_CALL = bindings::PERF_BR_COND_CALL as _;
-        const COND_RET = bindings::PERF_BR_COND_RET as _;
+    #[derive(Copy, Clone, Eq, PartialEq, Hash)]
+    pub enum BranchType : u8 {
+        UNKNOWN = bindings::PERF_BR_UNKNOWN as _,
+        COND = bindings::PERF_BR_COND as _,
+        UNCOND = bindings::PERF_BR_UNCOND as _,
+        IND = bindings::PERF_BR_IND as _,
+        CALL = bindings::PERF_BR_CALL as _,
+        IND_CALL = bindings::PERF_BR_IND_CALL as _,
+        RET = bindings::PERF_BR_RET as _,
+        SYSCALL = bindings::PERF_BR_SYSCALL as _,
+        COND_CALL = bindings::PERF_BR_COND_CALL as _,
+        COND_RET = bindings::PERF_BR_COND_RET as _,
     }
+}
 
+impl BranchType {
+    /// Create a new `BranchType`.
+    pub const fn new(value: u8) -> Self {
+        Self(value)
+    }
 }
 
 /// Record of a branch taken by the hardware.
@@ -694,17 +709,25 @@ c_enum! {
     /// but is present within the perf_event headers.
     ///
     /// [manpage]: http://man7.org/linux/man-pages/man2/perf_event_open.2.html
-    pub struct MemLevelNum : u8 {
-        const L1 = bindings::PERF_MEM_LVLNUM_L1 as _;
-        const L2 = bindings::PERF_MEM_LVLNUM_L2 as _;
-        const L3 = bindings::PERF_MEM_LVLNUM_L3 as _;
-        const L4 = bindings::PERF_MEM_LVLNUM_L4 as _;
+    #[derive(Copy, Clone, Eq, PartialEq, Hash)]
+    pub enum MemLevelNum : u8 {
+        L1 = bindings::PERF_MEM_LVLNUM_L1 as _,
+        L2 = bindings::PERF_MEM_LVLNUM_L2 as _,
+        L3 = bindings::PERF_MEM_LVLNUM_L3 as _,
+        L4 = bindings::PERF_MEM_LVLNUM_L4 as _,
 
-        const ANY_CACHE = bindings::PERF_MEM_LVLNUM_ANY_CACHE as _;
-        const LFB = bindings::PERF_MEM_LVLNUM_LFB as _;
-        const RAM = bindings::PERF_MEM_LVLNUM_RAM as _;
-        const PMEM = bindings::PERF_MEM_LVLNUM_PMEM as _;
-        const NA = bindings::PERF_MEM_LVLNUM_NA as _;
+        ANY_CACHE = bindings::PERF_MEM_LVLNUM_ANY_CACHE as _,
+        LFB = bindings::PERF_MEM_LVLNUM_LFB as _,
+        RAM = bindings::PERF_MEM_LVLNUM_RAM as _,
+        PMEM = bindings::PERF_MEM_LVLNUM_PMEM as _,
+        NA = bindings::PERF_MEM_LVLNUM_NA as _,
+    }
+}
+
+impl MemLevelNum {
+    /// Create a new `MemLevelNum`.
+    pub const fn new(value: u8) -> Self {
+        Self(value)
     }
 }
 

@@ -236,7 +236,7 @@ impl fmt::Debug for Mmap2<'_> {
             }
             MmapDetail::BuildId { .. } => {
                 if let Some(build_id) = self.build_id() {
-                    dbg.field("build_id", &build_id);
+                    dbg.field("build_id", &crate::util::fmt::HexStr(build_id));
                 }
             }
         }

@@ -41,6 +41,29 @@ impl fmt::Debug for ByteStr<'_> {
     }
 }
 
+/// Format a byte array as hex.
+pub(crate) struct HexStr<'a>(pub &'a [u8]);
+
+impl fmt::Debug for HexStr<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for &b in self.0 {
+            let nibbles = [b & 0xF, b >> 4];
+
+            for n in nibbles {
+                let c = match n {
+                    0x0..=0x9 => b'0' + n,
+                    0xA..=0xF => b'A' + n,
+                    _ => unreachable!(),
+                };
+
+                f.write_char(c as char)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 pub(crate) struct HexAddr<T>(pub T);
 
 impl<T: UpperHex> fmt::Debug for HexAddr<T> {

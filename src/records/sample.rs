@@ -195,7 +195,7 @@ impl<'p> Parse<'p> for Sample<'p> {
             unsafe { p.parse_slice(nr) }
         })?;
         let raw = p.parse_if_with(sty.contains(SampleFlags::RAW), |p| {
-            let size = p.parse_u64()? as _;
+            let size = p.parse_u32()? as _;
             p.parse_bytes(size)
         })?;
         let lbr = p.parse_if_with(sty.contains(SampleFlags::BRANCH_STACK), |p| {

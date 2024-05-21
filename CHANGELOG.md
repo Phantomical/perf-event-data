@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2023-05-21
+### Fixed
+- Parsing a `PERF_SAMPLE_RAW` field in `Sample` now properly handles padding
+  bytes when the field size is not a multiple of 8 bytes.
+- Parsing a `PERF_SAMPLE_STACK_USER` field in `Sample` will no longer parse the
+  `dyn_size` field when the static stack size is `0`.
+
 ## [0.1.5] - 2023-05-21
 ### Fixed
 - Parse the header for the `PERF_SAMPLE_RAW` field in `Sample` as a `u32`

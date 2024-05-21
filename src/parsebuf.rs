@@ -250,6 +250,47 @@ unsafe impl<'p> ParseBuf<'p> for ParseBufCursor<'p> {
     }
 }
 
+/// A [`ParseBuf`] impl that tracks how many bytes it has been advanced by.
+#[derive(Clone)]
+pub(crate) struct TrackingParseBuf<B> {
+    buf: B,
+    offset: usize,
+}
+
+impl<B> TrackingParseBuf<B> {
+    pub fn new(buf: B) -> Self {
+        Self { buf, offset: 0 }
+    }
+
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+}
+
+impl<'p> TrackingParseBuf<ParseBufCursor<'p>> {
+    pub(crate) fn as_slice(&self) -> Option<&'p [u8]> {
+        self.buf.as_slice()
+    }
+}
+
+unsafe impl<'p, B> ParseBuf<'p> for TrackingParseBuf<B>
+where
+    B: ParseBuf<'p>,
+{
+    fn chunk(&mut self) -> ParseResult<ParseBufChunk<'_, 'p>> {
+        self.buf.chunk()
+    }
+
+    fn advance(&mut self, count: usize) {
+        self.offset += count;
+        self.buf.advance(count);
+    }
+
+    fn remaining_hint(&self) -> Option<usize> {
+        self.buf.remaining_hint()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

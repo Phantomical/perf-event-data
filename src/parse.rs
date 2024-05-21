@@ -101,7 +101,7 @@ use std::mem::MaybeUninit;
 use perf_event_open_sys::bindings;
 
 use crate::endian::Endian;
-use crate::parsebuf::ParseBufCursor;
+use crate::parsebuf::{ParseBufCursor, TrackingParseBuf};
 use crate::util::cow::CowSliceExt;
 use crate::{Record, RecordMetadata, SampleId, Visitor};
 
@@ -144,7 +144,7 @@ pub trait Parse<'p>: Sized {
 #[derive(Clone)]
 pub struct Parser<B, E> {
     config: ParseConfig<E>,
-    data: B,
+    data: TrackingParseBuf<B>,
 }
 
 impl<'p, B, E> Parser<B, E>
@@ -154,7 +154,10 @@ where
 {
     /// Create a new parser.
     pub fn new(data: B, config: ParseConfig<E>) -> Self {
-        Self { config, data }
+        Self {
+            config,
+            data: TrackingParseBuf::new(data),
+        }
     }
 
     /// Get the [`ParseConfig`] instance for this `Parser`.
@@ -246,6 +249,20 @@ where
         Ok(Cow::Owned(bytes))
     }
 
+    /// Advance the stream by a number of bytes (with checking) but ignore the
+    /// resulting bytes.
+    fn parse_bytes_ignored(&mut self, mut len: usize) -> ParseResult<()> {
+        while len > 0 {
+            let chunk = self.data.chunk()?;
+            let consumed = chunk.len().min(len);
+
+            len -= consumed;
+            self.data.advance(consumed);
+        }
+
+        Ok(())
+    }
+
     /// Parse a slice in its entirety. If this returns successfully then the
     /// entire slice has been initialized.
     fn parse_to_slice(&mut self, slice: &mut [MaybeUninit<u8>]) -> ParseResult<()> {
@@ -317,6 +334,33 @@ where
             true => self.parse_with(func).map(Some),
             false => Ok(None),
         }
+    }
+
+    /// Parse some input and advance the [`ParseBuf`] so a multiple of `padding`
+    /// bytes are consumed.
+    ///
+    /// This is a somewhat common need since fields in various perf event
+    /// structures are usually required to be 8-byte aligned.
+    ///
+    /// # Panics
+    /// Panics if `padding` is 0.
+    pub(crate) fn parse_padded<F, R>(&mut self, padding: usize, func: F) -> ParseResult<R>
+    where
+        F: FnOnce(&mut Self) -> ParseResult<R>,
+    {
+        assert_ne!(padding, 0);
+
+        let offset = self.data.offset();
+        let value = func(self)?;
+        let parsed = self.data.offset() - offset;
+
+        match parsed % padding {
+            // do nothing, we are already aligned
+            0 => (),
+            n => self.parse_bytes_ignored(padding - n)?,
+        }
+
+        Ok(value)
     }
 
     /// Parse a single byte out of the source buffer.

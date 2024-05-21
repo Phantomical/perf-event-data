@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2023-05-21
+### Fixed
+- Parse the header for the `PERF_SAMPLE_RAW` field in `Sample` as a `u32`
+  instead of a `u64`.
+
 ## [0.1.4] - 2023-10-23
 ### Changed
 - Internal enum types are now declared using the `c-enum` crate.

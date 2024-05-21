@@ -216,8 +216,14 @@ impl<'p> Parse<'p> for Sample<'p> {
         })?;
         let stack_user = p.parse_if_with(sty.contains(SampleFlags::STACK_USER), |p| {
             let size = p.parse_u64()? as usize;
+
             let mut data = p.parse_bytes(size)?;
-            let dyn_size = p.parse_u64()? as usize;
+
+            // from the manpage: dyn_size is omitted if size is 0.
+            let dyn_size = match size {
+                0 => 0,
+                _ => p.parse_u64()? as usize,
+            };
 
             if dyn_size > data.len() {
                 return Err(ParseError::custom(

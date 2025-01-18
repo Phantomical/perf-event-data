@@ -797,8 +797,10 @@ mod tests {
             .with_read_format(ReadFormat::GROUP | ReadFormat::TOTAL_TIME_ENABLED);
         let sample: Sample = Parser::new(data, config).parse().unwrap();
 
-        assert_eq!(sample.pid(), Some(2260));
-        assert_eq!(sample.tid(), Some(2260));
+        println!("{sample:?}");
+
+        assert_eq!(sample.pid(), Some(0x08d4));
+        assert_eq!(sample.tid(), Some(0x08d4));
         assert_eq!(sample.time(), Some(0xA43AA18E77C9));
         assert_eq!(sample.cpu(), Some(0));
 

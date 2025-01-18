@@ -19,7 +19,7 @@ jobs:
 
       - name: cargo test
         shell: bash
-        run: cargo test
+        run: cargo test --all-features
 
   rustfmt:
     runs-on: ubuntu-latest

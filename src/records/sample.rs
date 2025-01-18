@@ -47,6 +47,7 @@ mod sample_impl {
             #[debug(with = crate::util::fmt::HexAddr)]
             pub phys_addr: u64,
             pub aux: Cow<'a, [u8]>,
+            pub cgroup: u64,
             pub data_page_size: u64,
             pub code_page_size: u64
         }
@@ -152,6 +153,10 @@ impl<'a> Sample<'a> {
         self.0.aux().map(|cow| &**cow)
     }
 
+    pub fn cgroup(&self) -> Option<u64> {
+        self.0.cgroup().copied()
+    }
+
     pub fn data_page_size(&self) -> Option<u64> {
         self.0.data_page_size().copied()
     }
@@ -246,12 +251,13 @@ impl<'p> Parse<'p> for Sample<'p> {
             Registers::parse_intr(p)
         })?;
         let phys_addr = p.parse_if(sty.contains(SampleFlags::PHYS_ADDR))?;
+        let cgroup = p.parse_if(sty.contains(SampleFlags::CGROUP))?;
+        let data_page_size = p.parse_if(sty.contains(SampleFlags::DATA_PAGE_SIZE))?;
+        let code_page_size = p.parse_if(sty.contains(SampleFlags::CODE_PAGE_SIZE))?;
         let aux = p.parse_if_with(sty.contains(SampleFlags::AUX), |p| {
             let size = p.parse_u64()? as usize;
             p.parse_bytes(size)
         })?;
-        let data_page_size = p.parse_if(sty.contains(SampleFlags::DATA_PAGE_SIZE))?;
-        let code_page_size = p.parse_if(sty.contains(SampleFlags::CODE_PAGE_SIZE))?;
 
         Ok(Self(sample_impl::Sample::new(
             ip,
@@ -276,6 +282,7 @@ impl<'p> Parse<'p> for Sample<'p> {
             regs_intr,
             phys_addr,
             aux,
+            cgroup,
             data_page_size,
             code_page_size,
         )))
@@ -761,5 +768,43 @@ mod tests {
         assert_eq!(sample.id(), Some(0x0F0E0D0C0B0A0908));
         assert_eq!(sample.cpu(), None);
         assert_eq!(sample.time(), None);
+    }
+
+    #[test]
+    fn parse_sample_with_cgroup() {
+        #[rustfmt::skip]
+        let data: &[u8] = &[
+            0xd4, 0x08, 0x00, 0x00, 0xd4, 0x08, 0x00, 0x00,
+            0xc9, 0x77, 0x8e, 0xa1, 0x3a, 0xa4, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xd0, 0xbe, 0xc0, 0x28, 0x00, 0x00, 0x00, 0x00,
+            0x24, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xbd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xac, 0x79, 0xc0, 0x28, 0x00, 0x00, 0x00, 0x00,
+            0xbe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+
+        let config: ParseConfig<Little> = ParseConfig::default()
+            .with_sample_type(
+                SampleFlags::TID
+                    | SampleFlags::CGROUP
+                    | SampleFlags::READ
+                    | SampleFlags::TIME
+                    | SampleFlags::CPU,
+            )
+            .with_read_format(ReadFormat::GROUP | ReadFormat::TOTAL_TIME_ENABLED);
+        let sample: Sample = Parser::new(data, config).parse().unwrap();
+
+        assert_eq!(sample.pid(), Some(0x08d4));
+        assert_eq!(sample.tid(), Some(0x08d4));
+        assert_eq!(sample.time(), Some(0xA43AA18E77C9));
+        assert_eq!(sample.cpu(), Some(0));
+
+        let group = sample.values().unwrap();
+        assert_eq!(group.len(), 2);
+
+        assert_eq!(sample.cgroup(), Some(1));
     }
 }

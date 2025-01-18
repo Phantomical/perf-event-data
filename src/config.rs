@@ -138,6 +138,13 @@ impl<E> ParseConfig<E> {
         self
     }
 
+    #[allow(dead_code)]
+    /// Used for testing, please open an issue if you need this.
+    pub(crate) fn with_read_format(mut self, read_format: ReadFormat) -> Self {
+        self.config.config_flags.set_read_format(read_format);
+        self
+    }
+
     pub(crate) fn with_misc(mut self, misc: u16) -> Self {
         self.config.config_flags.set_misc(misc);
         self

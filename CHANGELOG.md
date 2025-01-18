@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.6] - 2023-05-21
+## [0.1.7] - 2025-01-18
+### Fixed
+- Fixed missing parsing support for `PERF_SAMPLE_CGROUP` field in `Sample`.
+
+## [0.1.6] - 2024-05-21
 ### Fixed
 - Parsing a `PERF_SAMPLE_RAW` field in `Sample` now properly handles padding
   bytes when the field size is not a multiple of 8 bytes.
@@ -47,7 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2023-05-14
 This is the very first release of the `perf-event-data` crate.
 
-[Unreleased]: https://github.com/phantomical/perf-event-data/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/phantomical/perf-event-data/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/phantomical/perf-event-data/compare/v0.1.6...v0.1.7
+[0.1.6]: https://github.com/phantomical/perf-event-data/compare/v0.1.5...v0.1.6
+[0.1.5]: https://github.com/phantomical/perf-event-data/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/phantomical/perf-event-data/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/phantomical/perf-event-data/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/phantomical/perf-event-data/compare/v0.1.1...v0.1.2

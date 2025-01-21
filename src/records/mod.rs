@@ -80,6 +80,19 @@ use crate::prelude::*;
 pub struct SampleId(sample_id::SampleId);
 
 impl SampleId {
+    /// Construct a `SampleId` by reading its fields out of a full sample
+    /// struct.
+    pub fn from_sample(sample: &Sample<'_>) -> Self {
+        Self(sample_id::SampleId::new(
+            sample.pid(),
+            sample.tid(),
+            sample.time(),
+            sample.id(),
+            sample.stream_id(),
+            sample.cpu(),
+        ))
+    }
+
     /// The process ID that generated this event.
     pub fn pid(&self) -> Option<u32> {
         self.0.pid().copied()
@@ -170,6 +183,18 @@ impl<'p> Parse<'p> for SampleId {
 impl fmt::Debug for SampleId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
+    }
+}
+
+impl From<&'_ Sample<'_>> for SampleId {
+    fn from(value: &Sample) -> Self {
+        Self::from_sample(value)
+    }
+}
+
+impl From<Sample<'_>> for SampleId {
+    fn from(value: Sample<'_>) -> Self {
+        Self::from_sample(&value)
     }
 }
 
